@@ -1,3 +1,5 @@
+import { GamePlayScene } from "./scenes/GamePlayScene";
+import { LoadingScene } from "./scenes/LoadingScene";
 
 
 export const GameConfig: Phaser.Types.Core.GameConfig = {
@@ -7,6 +9,7 @@ export const GameConfig: Phaser.Types.Core.GameConfig = {
     type: Phaser.AUTO,
     parent: 'Game',
     scene: [
+        LoadingScene, GamePlayScene
     ],
     input: {
         keyboard: true,
