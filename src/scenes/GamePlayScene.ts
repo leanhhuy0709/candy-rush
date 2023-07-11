@@ -60,18 +60,49 @@ export class GamePlayScene extends Phaser.Scene {
             this.secondSelectedTile = gameObject
             this.secondSelectedTile.selectEffect()
 
-            //Handle
-            this.swapTiles(() => {
-                if (this.firstSelectedTile && this.secondSelectedTile) {
-                    this.firstSelectedTile.unSelectEffect()
-                    this.secondSelectedTile.unSelectEffect()
-                }
-                this.checkMatch()
+            if (this.isValidSelect()) {
+                //Handle
+                this.swapTiles(() => {
+                    if (this.firstSelectedTile && this.secondSelectedTile) {
+                        this.firstSelectedTile.unSelectEffect()
+                        this.secondSelectedTile.unSelectEffect()
 
-                this.firstSelectedTile = null
-                this.secondSelectedTile = null
-            })
+                        if (!this.handleMatch()) {
+                            this.firstSelectedTile.selectEffect()
+                            this.secondSelectedTile.selectEffect()
+                            this.swapTiles(() => {
+                                if (this.firstSelectedTile && this.secondSelectedTile) {
+                                    this.firstSelectedTile.unSelectEffect()
+                                    this.secondSelectedTile.unSelectEffect()
+                                }
+                                this.resetSelect()
+                            })
+                        } else {
+                            this.resetSelect()
+                        }
+                    }
+                })
+            } else {
+                this.firstSelectedTile.unSelectEffect()
+                this.secondSelectedTile.unSelectEffect()
+                this.resetSelect()
+            }
         }
+    }
+
+    private resetSelect(): void {
+        this.firstSelectedTile = null
+        this.secondSelectedTile = null
+    }
+
+    private isValidSelect(): boolean {
+        if (this.firstSelectedTile && this.secondSelectedTile) {
+            const temp1 = this.firstSelectedTile.getGridPosition()
+            const temp2 = this.secondSelectedTile.getGridPosition()
+
+            return Math.abs(temp1.x - temp2.x) + Math.abs(temp1.y - temp2.y) === 1
+        }
+        return false
     }
 
     private swapTiles(onComplete: Function): void {
@@ -126,7 +157,7 @@ export class GamePlayScene extends Phaser.Scene {
         }
     }
 
-    private checkMatch(): void {
+    private handleMatch(): boolean {
         if (this.firstSelectedTile && this.secondSelectedTile) {
             const listTileBoom: Tile[] = []
 
@@ -222,8 +253,11 @@ export class GamePlayScene extends Phaser.Scene {
                     const tile = listTileBoom[i]
                     tile.setVisible(false)
                 }
-            }
+                return true
+            } else return false
         }
+
+        return false
     }
 
     private isValidGrid(x: number, y: number): boolean {
