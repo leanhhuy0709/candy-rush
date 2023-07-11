@@ -3,19 +3,18 @@ import { IImageConstructor } from '../interfaces/image.interface'
 export class Tile extends Phaser.GameObjects.Image {
     private tween: Phaser.Tweens.Tween
     private graphics: Phaser.GameObjects.Graphics
+    private gridX: number
+    private gridY: number
 
-    constructor(aParams: IImageConstructor) {
+    constructor(aParams: IImageConstructor, gridX: number, gridY: number) {
         super(aParams.scene, aParams.x, aParams.y, aParams.texture, aParams.frame)
 
         this.setOrigin(0.5, 0.5)
         .setInteractive()
         .setDepth(5)
-        /*
-        this.scene.add
-            .rectangle(aParams.x, aParams.y, CONST.tileWidth, CONST.tileHeight)
-            .setOrigin(0.5, 0.5)
-            .setStrokeStyle(3, 0xB9E6FF)
-        */
+
+        this.gridX = gridX
+        this.gridY = gridY
 
         this.graphics = this.scene.add.graphics().lineStyle(2, 0xb9e6ff).setVisible(false).setDepth(4)
         this.graphics.strokeRoundedRect(0, 0, this.width + 2, this.height)
@@ -61,5 +60,18 @@ export class Tile extends Phaser.GameObjects.Image {
         const h = this.height
         this.graphics.x = this.x - w / 2
         this.graphics.y = this.y - h / 2
+    }
+
+    public getKey(): string {
+        return this.texture.key
+    }
+
+    public getGridPosition(): { x: number; y: number } {
+        return { x: this.gridX, y: this.gridY }
+    }
+
+    public setGridPosition(x: number, y: number): void {
+        this.gridX = x
+        this.gridY = y
     }
 }
