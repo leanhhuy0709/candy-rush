@@ -2,7 +2,7 @@ import { CONST, SCENE } from '../const/const'
 import { Tile } from '../objects/Tile'
 
 export class GamePlayScene extends Phaser.Scene {
-    private tileMap: Map<number[], Tile>
+    private tileMap: Map<string, Tile>
 
     private firstSelectedTile: Tile | null
     private secondSelectedTile: Tile | null
@@ -14,14 +14,14 @@ export class GamePlayScene extends Phaser.Scene {
     }
 
     public create() {
-        this.tileMap = new Map<number[], Tile>()
+        this.tileMap = new Map<string, Tile>()
 
         this.firstSelectedTile = null
         this.secondSelectedTile = null
 
         for (let i = 0; i < CONST.gridHeight; i++) {
             for (let j = 0; j < CONST.gridWidth; j++) {
-                this.tileMap.set([i, j], this.getRandomTile(i, j))
+                this.tileMap.set(this.convertKey(i, j), this.getRandomTile(i, j))
             }
         }
 
@@ -62,7 +62,14 @@ export class GamePlayScene extends Phaser.Scene {
                         this.firstSelectedTile.unSelectEffect()
                         this.secondSelectedTile.unSelectEffect()
 
-                        //this.checkIsValidGrid()
+                        this.swapTwoTiles(
+                            this.firstSelectedTile.gridX,
+                            this.firstSelectedTile.gridY,
+                            this.secondSelectedTile.gridX,
+                            this.secondSelectedTile.gridY
+                        )
+
+                        //this.checkIsValidGrid()//delete me
 
                         if (!this.handleMatch()) {
                             this.swapTiles(() => {
@@ -105,25 +112,17 @@ export class GamePlayScene extends Phaser.Scene {
                 x2 = this.secondSelectedTile.x,
                 y2 = this.secondSelectedTile.y
 
-            const grid1x = this.firstSelectedTile.gridX,
-                grid1y = this.firstSelectedTile.gridY,
-                grid2x = this.secondSelectedTile.gridX,
-                grid2y = this.secondSelectedTile.gridY
-
             const time = 500
 
             const tween1 = this.tweens.add({
                 targets: [this.firstSelectedTile],
                 x: x2,
                 y: y2,
-                gridX: grid2x,
-                gridY: grid2y,
                 duration: time,
                 ease: 'Linear',
                 onComplete: () => {
                     if (!tween2.isActive()) {
                         onComplete()
-                        this.swapTwoTiles(grid1x, grid1y, grid2x, grid2y)
                         tween1.destroy()
                         tween2.destroy()
                     }
@@ -134,14 +133,11 @@ export class GamePlayScene extends Phaser.Scene {
                 targets: [this.secondSelectedTile],
                 x: x1,
                 y: y1,
-                gridX: grid1x,
-                gridY: grid1y,
                 duration: time,
                 ease: 'Linear',
                 onComplete: () => {
                     if (!tween1.isActive()) {
                         onComplete()
-                        this.swapTwoTiles(grid1x, grid1y, grid2x, grid2y)
                         tween1.destroy()
                         tween2.destroy()
                     }
@@ -177,7 +173,7 @@ export class GamePlayScene extends Phaser.Scene {
                     for (; ; j++) {
                         const x = currentGridX + direction[i].x * j
                         const y = currentGridY + direction[i].y * j
-                        const tile = this.tileMap.get([x, y])
+                        const tile = this.tileMap.get(this.convertKey(x, y))
                         if (tile && tile.getKey() === currentTile.getKey()) {
                             //
                         } else break
@@ -187,7 +183,7 @@ export class GamePlayScene extends Phaser.Scene {
                         for (; j >= 0; j--) {
                             const x = currentGridX + direction[i].x * j
                             const y = currentGridY + direction[i].y * j
-                            const tile = this.tileMap.get([x, y])
+                            const tile = this.tileMap.get(this.convertKey(x, y))
                             if (tile) listTileBoom.push(tile)
                             boomMap.set(x.toString() + y.toString(), true)
                         }
@@ -195,9 +191,9 @@ export class GamePlayScene extends Phaser.Scene {
                 }
                 const x = currentGridX,
                     y = currentGridY
-                const tile0 = this.tileMap.get([x, y])
-                const tile1 = this.tileMap.get([x - 1, y])
-                const tile2 = this.tileMap.get([x + 1, y])
+                const tile0 = this.tileMap.get(this.convertKey(x, y))
+                const tile1 = this.tileMap.get(this.convertKey(x - 1, y))
+                const tile2 = this.tileMap.get(this.convertKey(x + 1, y))
                 if (tile0 && tile1 && tile2) {
                     if (
                         tile1.getKey() === currentTile.getKey() &&
@@ -219,8 +215,8 @@ export class GamePlayScene extends Phaser.Scene {
                         }
                     }
                 }
-                const tile3 = this.tileMap.get([x, y - 1])
-                const tile4 = this.tileMap.get([x, y + 1])
+                const tile3 = this.tileMap.get(this.convertKey(x, y - 1))
+                const tile4 = this.tileMap.get(this.convertKey(x, y + 1))
                 if (tile0 && tile3 && tile4) {
                     if (
                         tile3.getKey() === currentTile.getKey() &&
@@ -264,9 +260,9 @@ export class GamePlayScene extends Phaser.Scene {
             const gridX = listTileBoom[i].gridX
             cols[gridX]++
 
-            this.tileMap.delete([listTileBoom[i].gridX, listTileBoom[i].gridY])
+            this.tileMap.delete(this.convertKey(listTileBoom[i].gridX, listTileBoom[i].gridY))
             listTileBoom[i].gridY = -cols[gridX]
-            this.tileMap.set([listTileBoom[i].gridX, listTileBoom[i].gridY], listTileBoom[i])
+            this.tileMap.set(this.convertKey(listTileBoom[i].gridX, listTileBoom[i].gridY), listTileBoom[i])
 
             listTileBoom[i].updatePositon(false)
             listTileBoom[i].setRandomTextures()
@@ -275,23 +271,23 @@ export class GamePlayScene extends Phaser.Scene {
         for (let i = 0; i < CONST.gridWidth; i++) {
             if (cols[i] > 0) {
                 for (let j = CONST.gridHeight - 1; j >= 0; j--) {
-                    const tile1 = this.tileMap.get([i, j]) as Tile
+                    const tile1 = this.tileMap.get(this.convertKey(i, j)) as Tile
                     if (tile1.gridY != j) {
-                        this.tileMap.delete([tile1.gridX, tile1.gridY])
+                        this.tileMap.delete(this.convertKey(tile1.gridX, tile1.gridY))
                         tile1.gridY += cols[i]
-                        this.tileMap.set([tile1.gridX, tile1.gridY], tile1)
+                        this.tileMap.set(this.convertKey(tile1.gridX, tile1.gridY), tile1)
 
                         tile1.updatePositon(true)
                         continue
                     }
 
                     if (j + cols[i] >= CONST.gridHeight) continue
-                    const tile2 = this.tileMap.get([i, j + cols[i]]) as Tile
+                    const tile2 = this.tileMap.get(this.convertKey(i, j + cols[i])) as Tile
 
                     if (tile2.gridY != j + cols[i]) {
-                        this.tileMap.delete([tile1.gridX, tile1.gridY])
+                        this.tileMap.delete(this.convertKey(tile1.gridX, tile1.gridY))
                         tile1.gridY = j + cols[i]
-                        this.tileMap.set([tile1.gridX, tile1.gridY], tile1)
+                        this.tileMap.set(this.convertKey(tile1.gridX, tile1.gridY), tile1)
 
                         tile1.updatePositon(true)
                     }
@@ -305,10 +301,12 @@ export class GamePlayScene extends Phaser.Scene {
     }
 
     private swapTwoTiles(x1: number, y1: number, x2: number, y2: number): void {
-        if (this.tileMap.has([x1, y1]) && this.tileMap.has([x2, y2])) {
-            const temp = this.tileMap.get([x1, y1])
-            this.tileMap.set([x1, y1], this.tileMap.get([x2, y2]) as Tile)
-            this.tileMap.set([x2, y2], temp as Tile)
+        console.log(x1, y1, this.tileMap.has(this.convertKey(x1, y1)))
+        console.log(x2, y2, this.tileMap.has(this.convertKey(x2, y2)))
+        if (this.tileMap.has(this.convertKey(x1, y1)) && this.tileMap.has(this.convertKey(x2, y2))) {
+            const temp = this.tileMap.get(this.convertKey(x1, y1))
+            this.tileMap.set(this.convertKey(x1, y1), this.tileMap.get(this.convertKey(x2, y2)) as Tile)
+            this.tileMap.set(this.convertKey(x2, y2), temp as Tile)
         } else console.log('Error swap!')
     }
 
@@ -317,7 +315,7 @@ export class GamePlayScene extends Phaser.Scene {
 
         for (let i = 0; i < CONST.gridWidth; i++) {
             for (let j = 0; j < CONST.gridHeight; j++) {
-                const tile = this.tileMap.get([i, j]) as Tile
+                const tile = this.tileMap.get(this.convertKey(i, j)) as Tile
 
                 if (tile.gridX != i || tile.gridY != j) {
                     console.log(i, j, tile.gridX, tile.gridY)
@@ -325,5 +323,9 @@ export class GamePlayScene extends Phaser.Scene {
                 }
             }
         }
+    }
+
+    private convertKey(i: number, j: number): string {
+        return i.toString() + j.toString()
     }
 }
