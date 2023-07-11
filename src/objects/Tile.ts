@@ -1,3 +1,4 @@
+import { CONST } from '../const/const'
 import { IImageConstructor } from '../interfaces/image.interface'
 
 export class Tile extends Phaser.GameObjects.Image {
@@ -13,6 +14,8 @@ export class Tile extends Phaser.GameObjects.Image {
 
         this.gridX = gridX
         this.gridY = gridY
+
+        this.updatePositon()
 
         this.graphics = this.scene.add
             .graphics()
@@ -85,5 +88,34 @@ export class Tile extends Phaser.GameObjects.Image {
     public unSelectEffect(): void {
         this.unSpin()
         this.hideGraphics()
+    }
+
+    public updatePositon(isHaveEffect = true): void {
+        //this function update x, y from GridX, GridY
+        const w = this.scene.cameras.main.width
+
+        const newX =
+            CONST.tileWidth / 2 +
+            this.gridX * (CONST.tileWidth + CONST.margin) +
+            (w - (CONST.tileWidth + CONST.margin) * CONST.gridWidth)
+
+        const newY = CONST.tileHeight / 2 + this.gridY * (CONST.tileHeight + CONST.margin)
+
+        if (isHaveEffect) {
+            this.scene.tweens.add({
+                targets: this,
+                x: newX,
+                y: newY,
+                duration: 1500,
+                ease: 'Power3',
+            })
+        } else {
+            this.x = newX
+            this.y = newY
+        }
+    }
+
+    public setRandomTextures(): void {
+        this.setTexture(CONST.candyTypes[Phaser.Math.RND.between(0, CONST.candyTypes.length - 1)])
     }
 }
