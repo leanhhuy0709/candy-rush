@@ -1,7 +1,9 @@
+import { SCENE } from "../const/const"
+
 export class LoadingScene extends Phaser.Scene {
     constructor() {
         super({
-            key: 'LoadingScene',
+            key: SCENE.LOADING,
         })
     }
 

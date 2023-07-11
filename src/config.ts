@@ -1,6 +1,5 @@
-import { GamePlayScene } from "./scenes/GamePlayScene";
-import { LoadingScene } from "./scenes/LoadingScene";
-
+import { GamePlayScene } from './scenes/GamePlayScene'
+import { LoadingScene } from './scenes/LoadingScene'
 
 export const GameConfig: Phaser.Types.Core.GameConfig = {
     title: 'Candy Rush',
@@ -8,17 +7,16 @@ export const GameConfig: Phaser.Types.Core.GameConfig = {
     version: '2.0',
     type: Phaser.AUTO,
     parent: 'Game',
-    scene: [
-        LoadingScene, GamePlayScene
-    ],
+    scene: [LoadingScene, GamePlayScene],
     input: {
         keyboard: true,
     },
-    width: 520,
-    height: 700,
+    width: 600,
+    height: 800,
     scale: {
-        autoCenter: Phaser.Scale.Center.CENTER_BOTH
+        mode: Phaser.Scale.FIT,
+        autoCenter: Phaser.Scale.Center.CENTER_BOTH,
     },
-    backgroundColor: '#123456',
-    render: { pixelArt: false, antialias: true }
+    backgroundColor: '#63289e',
+    render: { pixelArt: false, antialias: true },
 }
