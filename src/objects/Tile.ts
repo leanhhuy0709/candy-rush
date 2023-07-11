@@ -4,8 +4,8 @@ import { IImageConstructor } from '../interfaces/image.interface'
 export class Tile extends Phaser.GameObjects.Image {
     private tween: Phaser.Tweens.Tween
     private graphics: Phaser.GameObjects.Graphics
-    private gridX: number
-    private gridY: number
+    public gridX: number
+    public gridY: number
 
     constructor(aParams: IImageConstructor, gridX: number, gridY: number) {
         super(aParams.scene, aParams.x, aParams.y, aParams.texture, aParams.frame)
@@ -69,15 +69,6 @@ export class Tile extends Phaser.GameObjects.Image {
 
     public getKey(): string {
         return this.texture.key
-    }
-
-    public getGridPosition(): { x: number; y: number } {
-        return { x: this.gridX, y: this.gridY }
-    }
-
-    public setGridPosition(x: number, y: number): void {
-        this.gridX = x
-        this.gridY = y
     }
 
     public selectEffect(): void {

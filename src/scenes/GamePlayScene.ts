@@ -2,9 +2,7 @@ import { CONST, SCENE } from '../const/const'
 import { Tile } from '../objects/Tile'
 
 export class GamePlayScene extends Phaser.Scene {
-    private tileGrid: Tile[][]
-
-    private tileMap: Map<string, Tile>
+    private tileMap: Map<number[], Tile>
 
     private firstSelectedTile: Tile | null
     private secondSelectedTile: Tile | null
@@ -16,14 +14,14 @@ export class GamePlayScene extends Phaser.Scene {
     }
 
     public create() {
+        this.tileMap = new Map<number[], Tile>()
+
         this.firstSelectedTile = null
         this.secondSelectedTile = null
 
-        this.tileGrid = []
         for (let i = 0; i < CONST.gridHeight; i++) {
-            this.tileGrid[i] = []
             for (let j = 0; j < CONST.gridWidth; j++) {
-                this.tileGrid[i].push(this.getRandomTile(i, j))
+                this.tileMap.set([i, j], this.getRandomTile(i, j))
             }
         }
 
@@ -64,16 +62,10 @@ export class GamePlayScene extends Phaser.Scene {
                         this.firstSelectedTile.unSelectEffect()
                         this.secondSelectedTile.unSelectEffect()
 
-                        this.checkIsValidGrid()
+                        //this.checkIsValidGrid()
 
                         if (!this.handleMatch()) {
-                            this.firstSelectedTile.selectEffect()
-                            this.secondSelectedTile.selectEffect()
                             this.swapTiles(() => {
-                                if (this.firstSelectedTile && this.secondSelectedTile) {
-                                    this.firstSelectedTile.unSelectEffect()
-                                    this.secondSelectedTile.unSelectEffect()
-                                }
                                 this.resetSelect()
                             })
                         } else {
@@ -95,14 +87,15 @@ export class GamePlayScene extends Phaser.Scene {
     }
 
     private isValidSelect(): boolean {
-        /*if (this.firstSelectedTile && this.secondSelectedTile) {
-            const temp1 = this.firstSelectedTile.getGridPosition()
-            const temp2 = this.secondSelectedTile.getGridPosition()
+        if (this.firstSelectedTile && this.secondSelectedTile) {
+            const temp1x = this.firstSelectedTile.gridX,
+                temp1y = this.firstSelectedTile.gridY
+            const temp2x = this.secondSelectedTile.gridX,
+                temp2y = this.secondSelectedTile.gridY
 
-            return Math.abs(temp1.x - temp2.x) + Math.abs(temp1.y - temp2.y) === 1
+            return Math.abs(temp1x - temp2x) + Math.abs(temp1y - temp2y) === 1
         }
-        return false*/
-        return true
+        return false
     }
 
     private swapTiles(onComplete: Function): void {
@@ -112,28 +105,25 @@ export class GamePlayScene extends Phaser.Scene {
                 x2 = this.secondSelectedTile.x,
                 y2 = this.secondSelectedTile.y
 
+            const grid1x = this.firstSelectedTile.gridX,
+                grid1y = this.firstSelectedTile.gridY,
+                grid2x = this.secondSelectedTile.gridX,
+                grid2y = this.secondSelectedTile.gridY
+
             const time = 500
-
-            const grid1 = this.firstSelectedTile.getGridPosition()
-            const grid2 = this.secondSelectedTile.getGridPosition()
-
-            this.tileGrid[grid1.x][grid1.y] = this.secondSelectedTile
-            this.tileGrid[grid2.x][grid2.y] = this.firstSelectedTile
-
-            const temp1 = this.firstSelectedTile.getGridPosition()
-            const temp2 = this.secondSelectedTile.getGridPosition()
-            this.firstSelectedTile.setGridPosition(temp2.x, temp2.y)
-            this.secondSelectedTile.setGridPosition(temp1.x, temp1.y)
 
             const tween1 = this.tweens.add({
                 targets: [this.firstSelectedTile],
                 x: x2,
                 y: y2,
+                gridX: grid2x,
+                gridY: grid2y,
                 duration: time,
                 ease: 'Linear',
                 onComplete: () => {
                     if (!tween2.isActive()) {
                         onComplete()
+                        this.swapTwoTiles(grid1x, grid1y, grid2x, grid2y)
                         tween1.destroy()
                         tween2.destroy()
                     }
@@ -144,11 +134,14 @@ export class GamePlayScene extends Phaser.Scene {
                 targets: [this.secondSelectedTile],
                 x: x1,
                 y: y1,
+                gridX: grid1x,
+                gridY: grid1y,
                 duration: time,
                 ease: 'Linear',
                 onComplete: () => {
                     if (!tween1.isActive()) {
                         onComplete()
+                        this.swapTwoTiles(grid1x, grid1y, grid2x, grid2y)
                         tween1.destroy()
                         tween2.destroy()
                     }
@@ -172,77 +165,80 @@ export class GamePlayScene extends Phaser.Scene {
             listSelect.push(this.firstSelectedTile)
             listSelect.push(this.secondSelectedTile)
 
-            const myMap = new Map<string, boolean>()
+            const boomMap = new Map<string, boolean>()
 
             while (listSelect.length > 0) {
                 const currentTile = listSelect.pop() as Tile
-                const currentGrid = currentTile.getGridPosition()
+                const currentGridX = currentTile.gridX,
+                    currentGridY = currentTile.gridY
 
                 for (let i = 0; i < direction.length; i++) {
                     let j = 1
                     for (; ; j++) {
-                        const x = currentGrid.x + direction[i].x * j
-                        const y = currentGrid.y + direction[i].y * j
-
-                        if (
-                            this.isValidGrid(x, y) &&
-                            this.tileGrid[x][y].getKey() === currentTile.getKey()
-                        ) {
+                        const x = currentGridX + direction[i].x * j
+                        const y = currentGridY + direction[i].y * j
+                        const tile = this.tileMap.get([x, y])
+                        if (tile && tile.getKey() === currentTile.getKey()) {
                             //
                         } else break
                     }
                     if (j > 2) {
                         j -= 1
                         for (; j >= 0; j--) {
-                            const x = currentGrid.x + direction[i].x * j
-                            const y = currentGrid.y + direction[i].y * j
-                            listTileBoom.push(this.tileGrid[x][y])
-                            myMap.set(x.toString() + y.toString(), true)
+                            const x = currentGridX + direction[i].x * j
+                            const y = currentGridY + direction[i].y * j
+                            const tile = this.tileMap.get([x, y])
+                            if (tile) listTileBoom.push(tile)
+                            boomMap.set(x.toString() + y.toString(), true)
                         }
                     }
                 }
-                const x = currentGrid.x,
-                    y = currentGrid.y
-
-                if (this.isValidGrid(x - 1, y) && this.isValidGrid(x + 1, y)) {
+                const x = currentGridX,
+                    y = currentGridY
+                const tile0 = this.tileMap.get([x, y])
+                const tile1 = this.tileMap.get([x - 1, y])
+                const tile2 = this.tileMap.get([x + 1, y])
+                if (tile0 && tile1 && tile2) {
                     if (
-                        this.tileGrid[x - 1][y].getKey() === currentTile.getKey() &&
-                        this.tileGrid[x + 1][y].getKey() === currentTile.getKey()
+                        tile1.getKey() === currentTile.getKey() &&
+                        tile2.getKey() === currentTile.getKey()
                     ) {
-                        if (!myMap.has((x - 1).toString() + y.toString())) {
-                            listTileBoom.push(this.tileGrid[x - 1][y])
-                            myMap.set((x - 1).toString() + y.toString(), true)
+                        if (!boomMap.has((x - 1).toString() + y.toString())) {
+                            listTileBoom.push(tile1)
+                            boomMap.set((x - 1).toString() + y.toString(), true)
                         }
 
-                        if (!myMap.has((x + 1).toString() + y.toString())) {
-                            listTileBoom.push(this.tileGrid[x + 1][y])
-                            myMap.set((x + 1).toString() + y.toString(), true)
+                        if (!boomMap.has((x + 1).toString() + y.toString())) {
+                            listTileBoom.push(tile2)
+                            boomMap.set((x + 1).toString() + y.toString(), true)
                         }
 
-                        if (!myMap.has(x.toString() + y.toString())) {
-                            listTileBoom.push(this.tileGrid[x][y])
-                            myMap.set(x.toString() + y.toString(), true)
+                        if (!boomMap.has(x.toString() + y.toString())) {
+                            listTileBoom.push(tile0)
+                            boomMap.set(x.toString() + y.toString(), true)
                         }
                     }
                 }
-                if (this.isValidGrid(x, y - 1) && this.isValidGrid(x, y + 1)) {
+                const tile3 = this.tileMap.get([x, y - 1])
+                const tile4 = this.tileMap.get([x, y + 1])
+                if (tile0 && tile3 && tile4) {
                     if (
-                        this.tileGrid[x][y - 1].getKey() === currentTile.getKey() &&
-                        this.tileGrid[x][y + 1].getKey() === currentTile.getKey()
+                        tile3.getKey() === currentTile.getKey() &&
+                        tile4.getKey() === currentTile.getKey()
                     ) {
-                        if (!myMap.has(x.toString() + (y - 1).toString())) {
-                            listTileBoom.push(this.tileGrid[x][y - 1])
-                            myMap.set(x.toString() + (y - 1).toString(), true)
+                        if (!boomMap.has(x.toString() + (y - 1).toString())) {
+                            listTileBoom.push(tile3)
+                            boomMap.set(x.toString() + (y - 1).toString(), true)
                         }
 
-                        if (!myMap.has(x.toString() + (y + 1).toString())) {
-                            listTileBoom.push(this.tileGrid[x][y + 1])
-                            myMap.set(x.toString() + (y + 1).toString(), true)
+                        if (!boomMap.has(x.toString() + (y + 1).toString())) {
+                            listTileBoom.push(tile4)
+                            boomMap.set(x.toString() + (y + 1).toString(), true)
                         }
 
-                        if (!myMap.has(x.toString() + y.toString())) {
-                            listTileBoom.push(this.tileGrid[x][y])
-                            myMap.set(x.toString() + y.toString(), true)
+                        if (!boomMap.has(x.toString() + y.toString())) {
+                            listTileBoom.push(tile0)
+                            boomMap.set(x.toString() + y.toString(), true)
                         }
                     }
                 }
@@ -252,7 +248,7 @@ export class GamePlayScene extends Phaser.Scene {
                 this.handleTileFall(listTileBoom)
 
                 return true
-            } else return true //debug
+            } else return false
         }
 
         return false
@@ -265,9 +261,13 @@ export class GamePlayScene extends Phaser.Scene {
         }
 
         for (let i = 0; i < listTileBoom.length; i++) {
-            const grid = listTileBoom[i].getGridPosition()
-            cols[grid.x]++
-            listTileBoom[i].setGridPosition(grid.x, -cols[grid.x])
+            const gridX = listTileBoom[i].gridX
+            cols[gridX]++
+
+            this.tileMap.delete([listTileBoom[i].gridX, listTileBoom[i].gridY])
+            listTileBoom[i].gridY = -cols[gridX]
+            this.tileMap.set([listTileBoom[i].gridX, listTileBoom[i].gridY], listTileBoom[i])
+
             listTileBoom[i].updatePositon(false)
             listTileBoom[i].setRandomTextures()
         }
@@ -275,21 +275,24 @@ export class GamePlayScene extends Phaser.Scene {
         for (let i = 0; i < CONST.gridWidth; i++) {
             if (cols[i] > 0) {
                 for (let j = CONST.gridHeight - 1; j >= 0; j--) {
-                    const tile1 = this.tileGrid[i][j]
-                    if (tile1.getGridPosition().y != j) {
-                        tile1.setGridPosition(
-                            tile1.getGridPosition().x,
-                            cols[i] + tile1.getGridPosition().y
-                        )
+                    const tile1 = this.tileMap.get([i, j]) as Tile
+                    if (tile1.gridY != j) {
+                        this.tileMap.delete([tile1.gridX, tile1.gridY])
+                        tile1.gridY += cols[i]
+                        this.tileMap.set([tile1.gridX, tile1.gridY], tile1)
+
                         tile1.updatePositon(true)
                         continue
                     }
 
                     if (j + cols[i] >= CONST.gridHeight) continue
-                    const tile2 = this.tileGrid[i][j + cols[i]]
+                    const tile2 = this.tileMap.get([i, j + cols[i]]) as Tile
 
-                    if (tile2.getGridPosition().y != j + cols[i]) {
-                        tile1.setGridPosition(tile2.getGridPosition().x, j + cols[i])
+                    if (tile2.gridY != j + cols[i]) {
+                        this.tileMap.delete([tile1.gridX, tile1.gridY])
+                        tile1.gridY = j + cols[i]
+                        this.tileMap.set([tile1.gridX, tile1.gridY], tile1)
+
                         tile1.updatePositon(true)
                     }
                 }
@@ -302,9 +305,11 @@ export class GamePlayScene extends Phaser.Scene {
     }
 
     private swapTwoTiles(x1: number, y1: number, x2: number, y2: number): void {
-        const temp = this.tileGrid[x1][y1]
-        this.tileGrid[x1][y1] = this.tileGrid[x2][y2]
-        this.tileGrid[x2][y2] = temp
+        if (this.tileMap.has([x1, y1]) && this.tileMap.has([x2, y2])) {
+            const temp = this.tileMap.get([x1, y1])
+            this.tileMap.set([x1, y1], this.tileMap.get([x2, y2]) as Tile)
+            this.tileMap.set([x2, y2], temp as Tile)
+        } else console.log('Error swap!')
     }
 
     private checkIsValidGrid(): void {
@@ -312,11 +317,11 @@ export class GamePlayScene extends Phaser.Scene {
 
         for (let i = 0; i < CONST.gridWidth; i++) {
             for (let j = 0; j < CONST.gridHeight; j++) {
-                const tile = this.tileGrid[i][j].getGridPosition()
+                const tile = this.tileMap.get([i, j]) as Tile
 
-                if (tile.x != i || tile.y != j) {
-                    console.log(i, j, tile.x, tile.y)
-                    this.tileGrid[i][j].selectEffect()
+                if (tile.gridX != i || tile.gridY != j) {
+                    console.log(i, j, tile.gridX, tile.gridY)
+                    tile.selectEffect()
                 }
             }
         }
