@@ -6,6 +6,10 @@ export class Tile extends Phaser.GameObjects.Image {
     private graphics: Phaser.GameObjects.Graphics
     public gridX: number
     public gridY: number
+    public temp: number
+    public R: number
+
+    public static numTweenRunning = 0
 
     constructor(aParams: IImageConstructor, gridX: number, gridY: number) {
         super(aParams.scene, aParams.x, aParams.y, aParams.texture, aParams.frame)
@@ -14,8 +18,6 @@ export class Tile extends Phaser.GameObjects.Image {
 
         this.gridX = gridX
         this.gridY = gridY
-
-        this.updatePositon()
 
         this.graphics = this.scene.add
             .graphics()
@@ -81,9 +83,11 @@ export class Tile extends Phaser.GameObjects.Image {
         this.hideGraphics()
     }
 
-    public updatePositon(isHaveEffect = true): void {
+    public updatePositon(isHaveEffect = true, onComplete?: Function): void {
         //this function update x, y from GridX, GridY
         const w = this.scene.cameras.main.width
+
+        
 
         const newX =
             CONST.tileWidth / 2 +
@@ -93,12 +97,20 @@ export class Tile extends Phaser.GameObjects.Image {
         const newY = CONST.tileHeight / 2 + this.gridY * (CONST.tileHeight + CONST.margin)
 
         if (isHaveEffect) {
+            Tile.numTweenRunning++
             this.scene.tweens.add({
                 targets: this,
                 x: newX,
                 y: newY,
-                duration: 1500,
+                duration: 1000,
                 ease: 'Power3',
+                onComplete: () => {
+                    Tile.numTweenRunning--
+                    if (onComplete && Tile.numTweenRunning == 0) {
+                        onComplete()
+                    }
+                
+                }
             })
         } else {
             this.x = newX

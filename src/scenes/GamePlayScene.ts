@@ -24,8 +24,74 @@ export class GamePlayScene extends Phaser.Scene {
                 this.setTile(i, j, this.getRandomTile(i, j))
             }
         }
+        /*
+        for (let i = 0; i < CONST.gridHeight; i++) {
+            for (let j = 0; j < CONST.gridWidth; j++)
+                this.getTile(i, j)?.updatePositon(true, () => {
+                    this.handleMatch()
+                })
+        }*/
 
         this.input.on('gameobjectdown', this.onTileClicked, this)
+
+        const centerX = this.cameras.main.width / 2
+        const centerY = this.cameras.main.height / 2
+        const R = 200
+
+        for (let i = 0; i < CONST.gridHeight; i++) {
+            for (let j = 0; j < CONST.gridWidth; j++) {
+                const tile = this.getTile(i, j) as Tile
+                const startAngle =
+                    ((i * CONST.gridWidth + j) / (CONST.gridHeight * CONST.gridWidth)) * 360
+                tile.temp = startAngle
+                this.tweens.add({
+                    targets: tile,
+                    temp: 360 + startAngle,
+                    R: 0,
+                    duration: 1500,
+                    ease: 'Power2',
+                    onStart: ()=> {
+                        tile.R = R
+                    },
+                    onComplete: () => {
+                        this.getTile(i, j)?.updatePositon(true, () => {
+                            this.handleMatch()
+                        })
+                    },
+                    onUpdate: () => {
+                        //(x - centerX)^2 + (x * tan - tan * centerX)^2 = R^2
+                        //(x - centerX)^2 * (1 + tan^2) = R^2
+                        //x = + - R/sqrt(1 + tan^2) + centerX
+                        const angle = tile.temp % 360
+                        const R = tile.R
+
+                        if (angle == 90) {
+                            tile.x = centerX
+                            tile.y = R + centerY
+                            return
+                        } else if (angle == 270) {
+                            tile.x = centerX
+                            tile.y = -R + centerY
+                            return
+                        }
+                        const tan = Math.tan((angle * Math.PI) / 180)
+                        if (angle < 90 && angle >= 0) {
+                            tile.x = R / Math.sqrt(1 + tan ** 2) + centerX
+                            tile.y = tan * (tile.x - centerX) + centerY
+                        } else if (angle < 180 && angle > 90) {
+                            tile.x = -R / Math.sqrt(1 + tan ** 2) + centerX
+                            tile.y = tan * (tile.x - centerX) + centerY
+                        } else if (angle < 270 && angle >= 180) {
+                            tile.x = -R / Math.sqrt(1 + tan ** 2) + centerX
+                            tile.y = tan * (tile.x - centerX) + centerY
+                        } else if (angle <= 360 && angle > 270) {
+                            tile.x = R / Math.sqrt(1 + tan ** 2) + centerX
+                            tile.y = tan * (tile.x - centerX) + centerY
+                        }
+                    }
+                })
+            }
+        }
     }
 
     public update() {
@@ -61,7 +127,8 @@ export class GamePlayScene extends Phaser.Scene {
                     if (this.firstSelectedTile && this.secondSelectedTile) {
                         this.firstSelectedTile.unSelectEffect()
                         this.secondSelectedTile.unSelectEffect()
-                        this.resetSelect()
+
+                        this.handleMatch(() => this.resetSelect())
                     }
                 })
             } else {
@@ -79,11 +146,13 @@ export class GamePlayScene extends Phaser.Scene {
 
     private isValidSelect(): boolean {
         if (this.firstSelectedTile && this.secondSelectedTile) {
+            /*
             const temp1x = this.firstSelectedTile.gridX,
                 temp1y = this.firstSelectedTile.gridY
             const temp2x = this.secondSelectedTile.gridX,
-                temp2y = this.secondSelectedTile.gridY
-            return Math.abs(temp1x - temp2x) + Math.abs(temp1y - temp2y) === 1
+                temp2y = this.secondSelectedTile.gridY*/
+            return true
+            //return Math.abs(temp1x - temp2x) + Math.abs(temp1y - temp2y) === 1
         }
         return false
     }
@@ -163,5 +232,118 @@ export class GamePlayScene extends Phaser.Scene {
 
     private setTile(i: number, j: number, tile: Tile): void {
         this.tileMap.set(i.toString() + j.toString(), tile)
+    }
+
+    private removeTile(i: number, j: number): void {
+        this.tileMap.delete(i.toString() + j.toString())
+    }
+
+    private handleMatch(onComplete?: Function): void {
+        //0 -> not visited
+        //1 -> visited
+        //2 -> boom
+
+        const directions = [
+            { x: 0, y: 1 },
+            { x: 0, y: -1 },
+            { x: 1, y: 0 },
+            { x: -1, y: 0 },
+        ]
+
+        const cols = []
+
+        for (let i = 0; i < CONST.gridWidth; i++) cols.push(0)
+
+        const listBoom = []
+
+        for (let i = 0; i < CONST.gridHeight; i++) {
+            for (let j = 0; j < CONST.gridWidth; j++) {
+                const currentTile = this.getTile(i, j) as Tile
+
+                if (!currentTile) console.log('Error index tile!')
+
+                for (let k = 0; k < directions.length; k++) {
+                    const tile = this.getTile(i + directions[k].x, j + directions[k].y)
+
+                    if (tile && tile.getKey() === currentTile.getKey()) {
+                        //-1 x x 2
+
+                        const tileBehind = this.getTile(i - directions[k].x, j - directions[k].y)
+                        const tileNext2 = this.getTile(
+                            i + 2 * directions[k].x,
+                            j + 2 * directions[k].y
+                        )
+
+                        if (
+                            (tileBehind && tileBehind.getKey() === currentTile.getKey()) ||
+                            (tileNext2 && tileNext2.getKey() === currentTile.getKey())
+                        ) {
+                            cols[currentTile.gridX]++
+
+                            listBoom.push({ x: i, y: j, newY: -cols[currentTile.gridX] })
+
+                            break
+                        }
+                    }
+                }
+            }
+        }
+
+        for (let i = 0; i < listBoom.length; i++) {
+            const data = listBoom[i]
+            const tile = this.getTile(data.x, data.y)
+
+            if (tile) {
+                const text = this.add
+                    .text(tile.x, tile.y + 10, '100', {
+                        fontFamily: 'Cambria',
+                        fontSize: 25,
+                        color: '#ffffff',
+                    })
+                    .setDepth(6)
+                    .setOrigin(0.5, 0.5)
+                    .setAlpha(0)
+                    .setStroke('#000000', 2)
+
+                const tween = this.tweens.add({
+                    targets: text,
+                    alpha: 1,
+                    duration: 700,
+                    y: tile.y,
+                    onComplete: () => {
+                        text.destroy()
+                        tween.destroy()
+                    },
+                })
+
+                this.removeTile(data.x, data.y)
+                tile.gridY = data.newY
+                this.setTile(data.x, data.newY, tile)
+                tile.updatePositon(false)
+                tile.setRandomTextures()
+                tile.angle = 0
+            }
+        }
+
+        if (listBoom.length) {
+            for (let i = 0; i < CONST.gridWidth; i++) {
+                let num = 0
+                for (let j = CONST.gridHeight - 1; j >= -cols[i]; j--) {
+                    const tile = this.getTile(i, j)
+
+                    if (tile) {
+                        if (num > 0) {
+                            this.removeTile(i, j)
+                            tile.gridY = j + num
+                            this.setTile(i, j + num, tile)
+                            tile.updatePositon(true, () => {
+                                this.handleMatch()
+                            })
+                        }
+                    } else num++
+                }
+            }
+        }
+        if (onComplete) onComplete()
     }
 }
