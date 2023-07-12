@@ -6,8 +6,6 @@ export class Tile extends Phaser.GameObjects.Image {
     private graphics: Phaser.GameObjects.Graphics
     public gridX: number
     public gridY: number
-    public temp: number
-    public R: number
 
     public static numTweenRunning = 0
 
@@ -34,7 +32,7 @@ export class Tile extends Phaser.GameObjects.Image {
             angle: 360,
             duration: 1500,
             ease: 'Linear',
-            repeat: -1,
+            repeat: -1
         })
         this.tween.pause()
     }
@@ -83,18 +81,20 @@ export class Tile extends Phaser.GameObjects.Image {
         this.hideGraphics()
     }
 
-    public updatePositon(isHaveEffect = true, onComplete?: Function): void {
+    public updatePositon(isHaveEffect = true, onComplete?: Function, delay?: number): void {
         //this function update x, y from GridX, GridY
         const w = this.scene.cameras.main.width
 
-        
+        const duration = 500
+
+        if (!delay) delay = 0
 
         const newX =
             CONST.tileWidth / 2 +
             this.gridX * (CONST.tileWidth + CONST.margin) +
             (w - (CONST.tileWidth + CONST.margin) * CONST.gridWidth)
 
-        const newY = CONST.tileHeight / 2 + this.gridY * (CONST.tileHeight + CONST.margin)
+        const newY = CONST.tileHeight / 2 + this.gridY * (CONST.tileHeight + CONST.margin) + 100
 
         if (isHaveEffect) {
             Tile.numTweenRunning++
@@ -102,15 +102,15 @@ export class Tile extends Phaser.GameObjects.Image {
                 targets: this,
                 x: newX,
                 y: newY,
-                duration: 1000,
-                ease: 'Power3',
+                delay: delay,
+                duration: duration,
+                ease: 'Power2',
                 onComplete: () => {
                     Tile.numTweenRunning--
                     if (onComplete && Tile.numTweenRunning == 0) {
                         onComplete()
                     }
-                
-                }
+                },
             })
         } else {
             this.x = newX
