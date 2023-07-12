@@ -155,7 +155,7 @@ export class Tile extends Phaser.GameObjects.Image {
         //Increase Chance
 
         const chance = Math.random()
-        if (chance < 0.5)
+        if (chance < 0.1)
         {
         
             const x = this.gridX

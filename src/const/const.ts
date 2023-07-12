@@ -12,13 +12,13 @@ export const CONST = {
         'croissant',
         'cupcake',
         'donut',
-        'eclair',
+        'eclair'/*,
         'macaroon',
         'pie',
         'poptart1',
         'poptart2',
         'starcookie1',
-        'starcookie2',
+        'starcookie2',*/
     ],
 }
 

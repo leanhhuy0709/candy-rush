@@ -7,6 +7,8 @@ export enum BOARD_STATE {
     HANDLING,
 }
 
+const COLOR_LIST = ['#ffffff', '#bcffe3', '#20b2aa', '#ff1919']
+
 export class GamePlayScene extends Phaser.Scene {
     private tileMap: Map<string, Tile>
 
@@ -23,14 +25,12 @@ export class GamePlayScene extends Phaser.Scene {
 
     private boardState: BOARD_STATE
 
+    private emitter: Phaser.GameObjects.Particles.ParticleEmitter
+
     constructor() {
         super({
             key: SCENE.GAMEPLAY,
         })
-    }
-
-    preload() {
-        this.load.atlas('flares', 'assets/particles/flares.png', 'assets/particles/flares.json')
     }
 
     public create() {
@@ -53,26 +53,17 @@ export class GamePlayScene extends Phaser.Scene {
         this.input.on('gameobjectdown', this.onTileClicked, this)
 
         //-------------------------------------------------------------
-        /*
         const shape1 = new Phaser.Geom.Circle(0, 0, 160)
-        const shape2 = new Phaser.Geom.Ellipse(0, 0, 500, 150)
-        const shape3 = new Phaser.Geom.Rectangle(-150, -150, 300, 300)
-        const shape4 = new Phaser.Geom.Line(-150, -150, 150, 150)
-        const shape5 = Phaser.Geom.Triangle.BuildEquilateral(0, -140, 300)
-
+        const shape4 = new Phaser.Geom.Line(400, 300, 30, 50)
         const emitter = this.add.particles(400, 300, 'flares', {
             frame: { frames: ['red', 'green', 'blue', 'white', 'yellow'], cycle: true },
             blendMode: 'ADD',
-            lifespan: 500,
+            lifespan: { min: 200, max: 500 },
             quantity: 4,
-            scale: { start: 0.5, end: 0.1 },
+            scale: { start: 0.3, end: 0.1 },
+            speed: { min: 50, max: 100 },
         })
-
-        emitter.addEmitZone({ type: 'edge', source: shape1, quantity: 64, total: 1 })
-        emitter.addEmitZone({ type: 'edge', source: shape2, quantity: 64, total: 1 })
-        emitter.addEmitZone({ type: 'edge', source: shape3, quantity: 64, total: 1 })
         emitter.addEmitZone({ type: 'edge', source: shape4, quantity: 64, total: 1 })
-        emitter.addEmitZone({ type: 'edge', source: shape5, quantity: 64, total: 1 })*/
     }
 
     public update(_time: number, delta: number) {
@@ -119,11 +110,11 @@ export class GamePlayScene extends Phaser.Scene {
                         this.boardState = BOARD_STATE.HANDLING
 
                         this.handleMatch((isMatch = true) => {
-                            if (!isMatch)
+                            /*if (!isMatch)
                                 this.swapTiles(() => {
                                     this.resetSelect()
                                 })
-                            else this.resetSelect()
+                            else debug*/ this.resetSelect()
                             this.boardState = BOARD_STATE.IDLE
                         })
                     }
@@ -142,6 +133,8 @@ export class GamePlayScene extends Phaser.Scene {
     }
 
     private isValidSelect(): boolean {
+        return true
+        /*
         if (this.firstSelectedTile && this.secondSelectedTile) {
             const temp1x = this.firstSelectedTile.gridX,
                 temp1y = this.firstSelectedTile.gridY
@@ -150,7 +143,7 @@ export class GamePlayScene extends Phaser.Scene {
 
             return Math.abs(temp1x - temp2x) + Math.abs(temp1y - temp2y) === 1
         }
-        return false
+        return false*/
     }
 
     private swapTiles(onComplete: Function): void {
@@ -369,7 +362,7 @@ export class GamePlayScene extends Phaser.Scene {
         }
 
         const temp = []
-        for (let i = 0; i < listGroup.length; i++) temp.push({ x: 0, y: 0 })
+        for (let i = 0; i < listGroup.length; i++) temp.push({ x: 0, y: 0, gridX: 0, gridY: 0 })
 
         for (let i = 0; i < listBoom.length; i++) {
             const data = listBoom[i]
@@ -379,13 +372,14 @@ export class GamePlayScene extends Phaser.Scene {
                 const groupID = group.get(this.convertToKey(data.x, data.y)) as number
                 temp[groupID].x += tile.x
                 temp[groupID].y += tile.y + 10
+                temp[groupID].gridX += tile.gridX
+                temp[groupID].gridY += tile.gridY
 
                 //
                 this.removeTile(data.x, data.y)
                 tile.gridY = data.newY
                 this.setTile(data.x, data.newY, tile)
                 tile.updatePositon(false)
-                tile.setRandomTextures()
                 tile.angle = 0
             }
         }
@@ -420,13 +414,90 @@ export class GamePlayScene extends Phaser.Scene {
                     scoreGot = 1000
                     break
             }
-            scoreGot *= combo + i
+            let idx = combo + i
+            if (idx >= COLOR_LIST.length) idx = COLOR_LIST.length - 1
+            scoreGot *= idx
+            const gridX = Math.round(temp[i].gridX / listGroup[i])
+            const gridY = Math.round(temp[i].gridY / listGroup[i])
+            if (listGroup[i] == 4) {
+                let x = undefined
+                // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                for (const [k, value] of group) {
+                    const xKey = Number(k[0])
+
+                    if (xKey == gridX) {
+                        x = xKey
+                        break
+                    }
+                }
+
+                if (x) {
+                    const y = -cols[x]
+
+                    cols[x]--
+
+                    const tile = this.getTile(x, y)
+
+                    if (tile) {
+                        this.removeTile(x, y)
+                        tile.gridX = gridX
+                        tile.gridY = gridY
+                        this.setTile(gridX, gridY, tile)
+                        tile.updatePositon(false)
+                        tile.scale = 0
+
+                        this.tweens.add({
+                            targets: tile,
+                            scale: 1,
+                            duration: 2000,
+                        })
+                    } else console.log('Error Tile!')
+                }
+            } else if (listGroup[i] >= 5) {
+                /*
+                console.log(temp[i].gridX, temp[i].gridY, gridX, gridY)
+                let x = undefined
+                // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                for (const [k, value] of group) {
+                    const xKey = Number(k[0])
+
+                    if (xKey == gridX) {
+                        x = xKey
+                        break
+                    }
+                }
+
+                if (x) {
+                    const y = -cols[x]
+
+                    cols[x]--
+
+                    const tile = this.getTile(x, y)
+
+                    if (tile) {
+                        this.removeTile(x, y)
+                        tile.gridX = gridX
+                        tile.gridY = gridY
+                        this.setTile(gridX, gridY, tile)
+                        tile.updatePositon(false)
+                        tile.scale = 0
+
+                        this.tweens.add({
+                            targets: tile,
+                            scale: 1,
+                            duration: 2000,
+                        })
+                    } else console.log('Error Tile!')
+                }
+                */
+            }
+
             this.scoreBoard.addScore(scoreGot)
             const text = this.add
                 .text(temp[i].x / listGroup[i], temp[i].y / listGroup[i], scoreGot.toString(), {
                     fontFamily: 'Cambria',
                     fontSize: 25,
-                    color: '#ffffff',
+                    color: COLOR_LIST[idx],
                 })
                 .setDepth(6)
                 .setOrigin(0.5, 0.5)
@@ -453,6 +524,7 @@ export class GamePlayScene extends Phaser.Scene {
 
                     if (tile) {
                         if (num > 0) {
+                            if (j < 0) tile.setRandomTextures()
                             this.removeTile(i, j)
                             tile.gridY = j + num
                             this.setTile(i, j + num, tile)
@@ -634,6 +706,9 @@ export class GamePlayScene extends Phaser.Scene {
         if (this.hintTile1 && this.hintTile2) {
             this.hintTile1.hideHint()
             this.hintTile2.hideHint()
+
+            if (this.firstSelectedTile) this.firstSelectedTile.showGraphics()
+
             this.hintTile1 = this.hintTile2 = null
         }
     }
@@ -643,6 +718,7 @@ export class GamePlayScene extends Phaser.Scene {
     }
 
     public shuffle(): void {
+        this.idleTime = 0
         const shape = this.getRandomShape()
 
         for (let i = 0; i < CONST.gridHeight; i++) {
