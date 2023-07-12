@@ -1,4 +1,6 @@
-const levels = [0, 2000, 5000, 8000, 10000, 13000, 15000, 17000]
+import { GamePlayScene } from '../scenes/GamePlayScene'
+
+const levels = [0, 1000, 3000, 5500, 7000, 9000, 10000, 13000, 15000, 18000, 220000, 1000000]
 export default class ScoreBoard {
     private scene: Phaser.Scene
 
@@ -57,19 +59,31 @@ export default class ScoreBoard {
         this.score += score
         this.scoreText.setText(this.score.toString())
 
-        if (this.score >= levels[this.level]) {
-            this.level++
-            this.targetText.setText(`${levels[this.level]}`)
-        }
+        this.updateProgressBar(
+            (this.score - levels[this.level - 1]) / (levels[this.level] - levels[this.level - 1])
+        )
     }
 
     public updateProgressBar(percent: number): void {
-        percent += 0.1
+        if (percent <= 0.05) percent = 0.05
         if (percent > 1) percent = 1
         this.progressBar.clear()
         this.progressBar
             .fillStyle(0xf5d1b6)
-            .fillRoundedRect(30, 50, percent * 150, 20, 5)
+            .fillRoundedRect(30, 50, percent * 175, 20, 5)
             .setDepth(5)
+    }
+
+    public handleGoToNextLevel(): void {
+        if (this.score >= levels[this.level]) {
+            this.level++
+            this.targetText.setText(`${levels[this.level]}`)
+            this.updateProgressBar(
+                (this.score - levels[this.level - 1]) /
+                    (levels[this.level] - levels[this.level - 1])
+            )
+            const scene = this.scene as GamePlayScene
+            scene.shuffle()
+        }
     }
 }

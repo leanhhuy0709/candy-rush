@@ -2,6 +2,11 @@ import { CONST, SCENE } from '../const/const'
 import ScoreBoard from '../objects/ScoreBoard'
 import { Tile } from '../objects/Tile'
 
+export enum BOARD_STATE {
+    IDLE,
+    HANDLING,
+}
+
 export class GamePlayScene extends Phaser.Scene {
     private tileMap: Map<string, Tile>
 
@@ -15,6 +20,8 @@ export class GamePlayScene extends Phaser.Scene {
 
     private hintTile1: Tile | null
     private hintTile2: Tile | null
+
+    private boardState: BOARD_STATE
 
     constructor() {
         super({
@@ -40,6 +47,7 @@ export class GamePlayScene extends Phaser.Scene {
 
         this.scoreBoard = new ScoreBoard(this)
 
+        this.boardState = BOARD_STATE.HANDLING
         this.shuffle()
 
         this.input.on('gameobjectdown', this.onTileClicked, this)
@@ -71,6 +79,10 @@ export class GamePlayScene extends Phaser.Scene {
         if (this.idleTime == 0) this.isIdleTweenPlaying = false
         this.idleTime += delta
         this.handleIdleTime()
+
+        if (this.boardState == BOARD_STATE.IDLE) {
+            this.scoreBoard.handleGoToNextLevel()
+        }
     }
 
     private getRandomTile(x: number, y: number): Tile {
@@ -104,6 +116,7 @@ export class GamePlayScene extends Phaser.Scene {
                     if (this.firstSelectedTile && this.secondSelectedTile) {
                         this.firstSelectedTile.unSelectEffect()
                         this.secondSelectedTile.unSelectEffect()
+                        this.boardState = BOARD_STATE.HANDLING
 
                         this.handleMatch((isMatch = true) => {
                             if (!isMatch)
@@ -111,6 +124,7 @@ export class GamePlayScene extends Phaser.Scene {
                                     this.resetSelect()
                                 })
                             else this.resetSelect()
+                            this.boardState = BOARD_STATE.IDLE
                         })
                     }
                 })
@@ -220,7 +234,7 @@ export class GamePlayScene extends Phaser.Scene {
         this.tileMap.delete(i.toString() + j.toString())
     }
 
-    private handleMatch(onComplete?: Function): void {
+    private handleMatch(onComplete?: Function, combo = 0): void {
         //0 -> not visited
         //1 -> visited
         //2 -> boom
@@ -406,6 +420,7 @@ export class GamePlayScene extends Phaser.Scene {
                     scoreGot = 1000
                     break
             }
+            scoreGot *= combo + i
             this.scoreBoard.addScore(scoreGot)
             const text = this.add
                 .text(temp[i].x / listGroup[i], temp[i].y / listGroup[i], scoreGot.toString(), {
@@ -441,14 +456,20 @@ export class GamePlayScene extends Phaser.Scene {
                             this.removeTile(i, j)
                             tile.gridY = j + num
                             this.setTile(i, j + num, tile)
-                            tile.updatePositon(true, () => {
-                                this.handleMatch()
-                            })
+                            tile.updatePositon(
+                                true,
+                                () => {
+                                    this.handleMatch(() => {
+                                        if (onComplete) onComplete()
+                                    }, combo + listGroup.length - 1)
+                                },
+                                undefined,
+                                1300
+                            )
                         }
                     } else num++
                 }
             }
-            if (onComplete) onComplete()
         } else if (onComplete) onComplete(false)
     }
 
@@ -475,8 +496,7 @@ export class GamePlayScene extends Phaser.Scene {
 
     private handleIdleTime(): void {
         if (this.idleTime > 5000) {
-            if (this.firstSelectedTile)
-            {
+            if (this.firstSelectedTile) {
                 this.firstSelectedTile.unSelectEffect()
                 this.firstSelectedTile = null
             }
@@ -622,7 +642,7 @@ export class GamePlayScene extends Phaser.Scene {
         return i.toString() + j.toString()
     }
 
-    private shuffle(): void {
+    public shuffle(): void {
         const shape = this.getRandomShape()
 
         for (let i = 0; i < CONST.gridHeight; i++) {
@@ -651,6 +671,7 @@ export class GamePlayScene extends Phaser.Scene {
                                         this.idleTime = 0
                                         this.firstSelectedTile = null
                                         this.secondSelectedTile = null
+                                        this.boardState = BOARD_STATE.IDLE
                                     })
                                 },
                                 Phaser.Math.Between(0, 500)

@@ -94,11 +94,12 @@ export class Tile extends Phaser.GameObjects.Image {
         this.hideGraphics()
     }
 
-    public updatePositon(isHaveEffect = true, onComplete?: Function, delay?: number): void {
+    public updatePositon(isHaveEffect = true, onComplete?: Function, delay?: number, time?: number): void {
         //this function update x, y from GridX, GridY
         const w = this.scene.cameras.main.width
 
-        const duration = 500
+        let duration = 500
+        if (time) duration = time
 
         if (!delay) delay = 0
 
