@@ -22,7 +22,12 @@ export class GamePlayScene extends Phaser.Scene {
         })
     }
 
+    preload() {
+        this.load.atlas('flares', 'assets/particles/flares.png', 'assets/particles/flares.json')
+    }
+
     public create() {
+        this.add.image(0, 0, 'bg').setOrigin(0, 0)
         this.tileMap = new Map<string, Tile>()
 
         for (let i = 0; i < CONST.gridHeight; i++) {
@@ -38,6 +43,28 @@ export class GamePlayScene extends Phaser.Scene {
         this.shuffle()
 
         this.input.on('gameobjectdown', this.onTileClicked, this)
+
+        //-------------------------------------------------------------
+        /*
+        const shape1 = new Phaser.Geom.Circle(0, 0, 160)
+        const shape2 = new Phaser.Geom.Ellipse(0, 0, 500, 150)
+        const shape3 = new Phaser.Geom.Rectangle(-150, -150, 300, 300)
+        const shape4 = new Phaser.Geom.Line(-150, -150, 150, 150)
+        const shape5 = Phaser.Geom.Triangle.BuildEquilateral(0, -140, 300)
+
+        const emitter = this.add.particles(400, 300, 'flares', {
+            frame: { frames: ['red', 'green', 'blue', 'white', 'yellow'], cycle: true },
+            blendMode: 'ADD',
+            lifespan: 500,
+            quantity: 4,
+            scale: { start: 0.5, end: 0.1 },
+        })
+
+        emitter.addEmitZone({ type: 'edge', source: shape1, quantity: 64, total: 1 })
+        emitter.addEmitZone({ type: 'edge', source: shape2, quantity: 64, total: 1 })
+        emitter.addEmitZone({ type: 'edge', source: shape3, quantity: 64, total: 1 })
+        emitter.addEmitZone({ type: 'edge', source: shape4, quantity: 64, total: 1 })
+        emitter.addEmitZone({ type: 'edge', source: shape5, quantity: 64, total: 1 })*/
     }
 
     public update(_time: number, delta: number) {
@@ -49,6 +76,7 @@ export class GamePlayScene extends Phaser.Scene {
     private getRandomTile(x: number, y: number): Tile {
         const randomTileType: string =
             CONST.candyTypes[Phaser.Math.RND.between(0, CONST.candyTypes.length - 1)]
+
         return new Tile(
             {
                 scene: this,
@@ -77,7 +105,13 @@ export class GamePlayScene extends Phaser.Scene {
                         this.firstSelectedTile.unSelectEffect()
                         this.secondSelectedTile.unSelectEffect()
 
-                        this.handleMatch(() => this.resetSelect())
+                        this.handleMatch((isMatch = true) => {
+                            if (!isMatch)
+                                this.swapTiles(() => {
+                                    this.resetSelect()
+                                })
+                            else this.resetSelect()
+                        })
                     }
                 })
             } else {
@@ -95,13 +129,12 @@ export class GamePlayScene extends Phaser.Scene {
 
     private isValidSelect(): boolean {
         if (this.firstSelectedTile && this.secondSelectedTile) {
-            /*
             const temp1x = this.firstSelectedTile.gridX,
                 temp1y = this.firstSelectedTile.gridY
             const temp2x = this.secondSelectedTile.gridX,
-                temp2y = this.secondSelectedTile.gridY*/
-            return true
-            //return Math.abs(temp1x - temp2x) + Math.abs(temp1y - temp2y) === 1
+                temp2y = this.secondSelectedTile.gridY
+
+            return Math.abs(temp1x - temp2x) + Math.abs(temp1y - temp2y) === 1
         }
         return false
     }
@@ -175,11 +208,11 @@ export class GamePlayScene extends Phaser.Scene {
         } else console.log('Error swap!')
     }
 
-    private getTile(i: number, j: number): Tile | undefined {
+    public getTile(i: number, j: number): Tile | undefined {
         return this.tileMap.get(i.toString() + j.toString())
     }
 
-    private setTile(i: number, j: number, tile: Tile): void {
+    public setTile(i: number, j: number, tile: Tile): void {
         this.tileMap.set(i.toString() + j.toString(), tile)
     }
 
@@ -415,8 +448,8 @@ export class GamePlayScene extends Phaser.Scene {
                     } else num++
                 }
             }
-        }
-        if (onComplete) onComplete()
+            if (onComplete) onComplete()
+        } else if (onComplete) onComplete(false)
     }
 
     private idleEffect(): void {
@@ -441,8 +474,14 @@ export class GamePlayScene extends Phaser.Scene {
     }
 
     private handleIdleTime(): void {
-        if (this.idleTime > 1000) {
-            //this.idleEffect()
+        if (this.idleTime > 5000) {
+            if (this.firstSelectedTile)
+            {
+                this.firstSelectedTile.unSelectEffect()
+                this.firstSelectedTile = null
+            }
+
+            this.idleEffect()
             this.showHint()
         } else {
             this.hideHint()
@@ -568,8 +607,6 @@ export class GamePlayScene extends Phaser.Scene {
         if (this.hintTile1 && this.hintTile2) {
             this.hintTile1.showHint()
             this.hintTile2.showHint()
-            this.onTileClicked(null, this.hintTile1)
-            this.onTileClicked(null, this.hintTile2)
         }
     }
 
@@ -586,9 +623,6 @@ export class GamePlayScene extends Phaser.Scene {
     }
 
     private shuffle(): void {
-        const centerX = this.cameras.main.width / 2
-        const centerY = this.cameras.main.height / 2
-
         const shape = this.getRandomShape()
 
         for (let i = 0; i < CONST.gridHeight; i++) {
@@ -636,7 +670,7 @@ export class GamePlayScene extends Phaser.Scene {
     }
 
     private getRandomShape(): Phaser.Geom.Rectangle | Phaser.Geom.Circle | Phaser.Geom.Ellipse {
-        const randomNumber = Phaser.Math.Between(0, 3)
+        const randomNumber = Phaser.Math.Between(0, 2)
         const centerX = this.cameras.main.width / 2
         const centerY = this.cameras.main.height / 2
         switch (randomNumber) {

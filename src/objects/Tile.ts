@@ -1,5 +1,6 @@
 import { CONST } from '../const/const'
 import { IImageConstructor } from '../interfaces/image.interface'
+import { GamePlayScene } from '../scenes/GamePlayScene'
 
 export class Tile extends Phaser.GameObjects.Image {
     private tween: Phaser.Tweens.Tween
@@ -40,8 +41,8 @@ export class Tile extends Phaser.GameObjects.Image {
 
         this.hintTween = this.scene.tweens.add({
             targets: this,
-            scale: 0.5,
-            duration: 1500,
+            scale: 0.8,
+            duration: 500,
             ease: 'Linear',
             repeat: -1,
             yoyo: true,
@@ -147,16 +148,46 @@ export class Tile extends Phaser.GameObjects.Image {
     }
 
     public setRandomTextures(): void {
-        this.setTexture(CONST.candyTypes[Phaser.Math.RND.between(0, CONST.candyTypes.length - 1)])
+        let randomTileType: string =
+            CONST.candyTypes[Phaser.Math.RND.between(0, CONST.candyTypes.length - 1)]
+
+        //Increase Chance
+
+        const chance = Math.random()
+        if (chance < 0.5)
+        {
+        
+            const x = this.gridX
+            let y = this.gridY
+            if (y < 0) y = 1
+            const scene = this.scene as GamePlayScene
+            const listCandyNextTo = []
+            if (scene.getTile(x - 1, y)) listCandyNextTo.push(scene.getTile(x - 1, y))
+            if (scene.getTile(x + 1, y)) listCandyNextTo.push(scene.getTile(x + 1, y))
+            if (scene.getTile(x, y - 1)) listCandyNextTo.push(scene.getTile(x, y - 1))
+            if (scene.getTile(x, y + 1)) listCandyNextTo.push(scene.getTile(x, y + 1))
+
+            if (listCandyNextTo.length > 0)
+            {
+                randomTileType = (listCandyNextTo[Phaser.Math.Between(0, listCandyNextTo.length - 1)] as Tile).getKey()
+            }
+        }
+        this.setTexture(randomTileType)
     }
 
     public showHint(): void {
-        //this.hintTween.resume()
+        this.hintTween.resume()
         this.showGraphics()
     }
 
     public hideHint(): void {
-        //this.hintTween.pause()
+        this.hintTween.pause()
+        this.scene.tweens.add({
+            targets: this,
+            scale: 1,
+            duration: 1000,
+            ease: 'Linear',
+        })
         this.hideGraphics()
     }
 }
