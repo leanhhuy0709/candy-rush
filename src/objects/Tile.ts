@@ -9,6 +9,8 @@ export class Tile extends Phaser.GameObjects.Image {
 
     public static numTweenRunning = 0
 
+    private hintTween: Phaser.Tweens.Tween
+
     constructor(aParams: IImageConstructor, gridX: number, gridY: number) {
         super(aParams.scene, aParams.x, aParams.y, aParams.texture, aParams.frame)
 
@@ -32,9 +34,19 @@ export class Tile extends Phaser.GameObjects.Image {
             angle: 360,
             duration: 1500,
             ease: 'Linear',
-            repeat: -1
+            repeat: -1,
         })
         this.tween.pause()
+
+        this.hintTween = this.scene.tweens.add({
+            targets: this,
+            scale: 0.5,
+            duration: 1500,
+            ease: 'Linear',
+            repeat: -1,
+            yoyo: true,
+        })
+        this.hintTween.pause()
     }
 
     public spin(): void {
@@ -118,7 +130,33 @@ export class Tile extends Phaser.GameObjects.Image {
         }
     }
 
+    public goToPosition(x: number, y: number, onComplete?: Function, delay?: number): void {
+        this.scene.tweens.add({
+            targets: this,
+            x: x,
+            y: y,
+            delay: delay,
+            duration: 500,
+            ease: 'Power2',
+            onComplete: () => {
+                if (onComplete) {
+                    onComplete()
+                }
+            },
+        })
+    }
+
     public setRandomTextures(): void {
         this.setTexture(CONST.candyTypes[Phaser.Math.RND.between(0, CONST.candyTypes.length - 1)])
+    }
+
+    public showHint(): void {
+        //this.hintTween.resume()
+        this.showGraphics()
+    }
+
+    public hideHint(): void {
+        //this.hintTween.pause()
+        this.hideGraphics()
     }
 }
