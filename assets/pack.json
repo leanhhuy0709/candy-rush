@@ -60,6 +60,17 @@
         "type": "image",
         "key": "starcookie2",
         "url": "./assets/images/starcookie2.png"
+      },
+      {
+        "type": "image",
+        "key": "bg",
+        "url": "./assets/background/bg.png"
+      },
+      {
+        "type": "atlas",
+        "key": "flares",
+        "textureURL": "assets/particles/flares.png",
+        "atlasURL": "assets/particles/flares.json"
       }
     ]
   }
