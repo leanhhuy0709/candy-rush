@@ -20,6 +20,7 @@ export default class ParticleEmitterPool {
             emitter.x = x
             emitter.y = y
             emitter.setTexture(textures).setConfig(config).setVisible(true).setActive(true)
+            emitter.start()
             return emitter
         }
 
