@@ -209,6 +209,7 @@ export class GamePlayScene extends Phaser.Scene {
                 const g1 = group.get(this.convertToKey(i, j))
 
                 let k = 0
+                let isBoom = false
                 for (; k < directions.length; k++) {
                     const tile = this.getTile(i + directions[k].x, j + directions[k].y)
 
@@ -227,12 +228,12 @@ export class GamePlayScene extends Phaser.Scene {
                         if (g1) key = g1
                         if (g2) key = g2
 
-                        let isBoom = false
-
                         if (tileBehind && tileBehind.getKey() === currentTile.getKey()) {
-                            cols[currentTile.gridX]++
-                            currentTile.boom()
-                            listBoom.push({ x: i, y: j, newY: -cols[currentTile.gridX] })
+                            if (!isBoom) {
+                                cols[currentTile.gridX]++
+                                currentTile.boom()
+                                listBoom.push({ x: i, y: j, newY: -cols[currentTile.gridX] })
+                            }
 
                             const g3 = group.get(
                                 this.convertToKey(i - directions[k].x, j - directions[k].y)
@@ -269,10 +270,11 @@ export class GamePlayScene extends Phaser.Scene {
                         }
 
                         if (!isBoom && tileNext2 && tileNext2.getKey() === currentTile.getKey()) {
-                            cols[currentTile.gridX]++
-                            currentTile.boom()
-                            listBoom.push({ x: i, y: j, newY: -cols[currentTile.gridX] })
-
+                            if (!isBoom) {
+                                cols[currentTile.gridX]++
+                                currentTile.boom()
+                                listBoom.push({ x: i, y: j, newY: -cols[currentTile.gridX] })
+                            }
                             const g3 = group.get(
                                 this.convertToKey(i + 2 * directions[k].x, j + 2 * directions[k].y)
                             )
@@ -328,7 +330,7 @@ export class GamePlayScene extends Phaser.Scene {
                             } else if (currentTile.isMegaTile()) {
                                 //
                             }
-                            break
+                            //break
                         }
                     }
                 }
@@ -635,7 +637,7 @@ export class GamePlayScene extends Phaser.Scene {
                                     }, combo + listGroup.length - 1)
                                 },
                                 undefined,
-                                (2000 / 8) * cols[i]
+                                (1500 / 8) * cols[i]
                             )
                         }
                     } else num++
