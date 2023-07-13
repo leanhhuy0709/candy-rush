@@ -153,9 +153,8 @@ export class Tile extends Phaser.GameObjects.Image {
             CONST.candyTypes[Phaser.Math.RND.between(0, CONST.candyTypes.length - 1)]
 
         //Increase Chance
-
         const chance = Math.random()
-        if (chance < 0.8)
+        if (chance < 0.5)
         {
         
             let x = this.gridX

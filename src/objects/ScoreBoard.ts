@@ -1,7 +1,5 @@
 import { GamePlayScene } from '../scenes/GamePlayScene'
 
-const levels = [0, 1000, 3000, 5500, 7000, 9000, 10000, 13000, 15000, 18000, 220000, 1000000]
-
 const progressBarX = 30
 const progressBarY = 50
 const progressBarWidth = 175
@@ -16,6 +14,8 @@ export default class ScoreBoard {
     private targetText: Phaser.GameObjects.Text
 
     private progressBar: Phaser.GameObjects.Graphics
+
+    private progressBarEmitter: Phaser.GameObjects.Particles.ParticleEmitter
 
     private level = 1
     private levels: number[] = []
@@ -35,6 +35,24 @@ export default class ScoreBoard {
             })
             .setDepth(6)
             .setOrigin(0.5, 0.5)
+
+        for (let i = 1; i < 1000; i++) {
+            this.levels.push(((i * (i + 1)) / 2) * 500)
+        }
+
+        this.progressBarEmitter = this.scene.add
+            .particles(progressBarX, progressBarY + progressBarHeight / 2, 'flares', {
+                frame: 'white',
+                color: [0x96e0da, 0x937ef3],
+                colorEase: 'quad.out',
+                lifespan: 500,
+                angle: { min: -190, max: -170 },
+                scale: { start: 0.2, end: 0, ease: 'sine.out' },
+                speed: 100,
+                advance: 2000,
+                blendMode: 'ADD',
+            })
+            .setDepth(6)
 
         this.scene.add
             .graphics()
@@ -68,10 +86,6 @@ export default class ScoreBoard {
             )
             .setDepth(6)
             .setOrigin(0.5, 0.5)
-
-        for (let i = 1; i < 100; i++) {
-            this.levels.push(((i * (i + 1)) / 2) * 500)
-        }
     }
 
     public addScore(score: number): void {
@@ -98,6 +112,14 @@ export default class ScoreBoard {
                 5
             )
             .setDepth(5)
+
+        this.progressBarEmitter.setPosition(
+            progressBarX + percent * progressBarWidth - 5,
+            progressBarY + progressBarHeight / 2
+        )
+
+        if (percent >= 0.1) this.progressBarEmitter.setVisible(true)
+        else this.progressBarEmitter.setVisible(false)
     }
 
     public handleGoToNextLevel(): void {
@@ -131,6 +153,7 @@ export default class ScoreBoard {
             (this.score - this.levels[this.level - 1]) /
             (this.levels[this.level] - this.levels[this.level - 1])
 
+        if (percent <= 0.05) percent = 0.05
         if (percent > 1) percent = 1
 
         this.scene.tweens.add({
