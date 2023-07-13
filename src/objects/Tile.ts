@@ -2,7 +2,9 @@ import { CONST } from '../const/const'
 import { IImageConstructor } from '../interfaces/image.interface'
 import { GamePlayScene } from '../scenes/GamePlayScene'
 
-const CHANCE = 0.6
+const CHANCE = 0.3
+
+const LIMIT_BOOM = 10
 export class Tile extends Phaser.GameObjects.Image {
     private tween: Phaser.Tweens.Tween
     private graphics: Phaser.GameObjects.Graphics
@@ -10,6 +12,8 @@ export class Tile extends Phaser.GameObjects.Image {
     public gridY: number
 
     public static numTweenRunning = 0
+
+    public static boomFlag = 0
     private hintTween: Phaser.Tweens.Tween
     private isSuper = false
     private isMega = false
@@ -199,7 +203,7 @@ export class Tile extends Phaser.GameObjects.Image {
     }
 
     public setRandomTextures(coeffX?: number, coeffY?: number): void {
-        let randomTileType: string =
+        const randomTileType: string =
             CONST.candyTypes[Phaser.Math.RND.between(0, CONST.candyTypes.length - 1)]
 
         //Increase Chance
@@ -220,12 +224,13 @@ export class Tile extends Phaser.GameObjects.Image {
             if (scene.getTile(x, y + 1)) listCandyNextTo.push(scene.getTile(x, y + 1))
 
             if (listCandyNextTo.length > 0) {
-                randomTileType = (
-                    listCandyNextTo[Phaser.Math.Between(0, listCandyNextTo.length - 1)] as Tile
-                ).getKey()
+                this.setTexture(
+                    (
+                        listCandyNextTo[Phaser.Math.Between(0, listCandyNextTo.length - 1)] as Tile
+                    ).getKey()
+                )
             }
-        }
-        this.setTexture(randomTileType)
+        } else this.setTexture(randomTileType)
     }
 
     public showHint(): void {
@@ -245,6 +250,8 @@ export class Tile extends Phaser.GameObjects.Image {
     }
 
     public boom(): void {
+        if (Tile.boomFlag > LIMIT_BOOM) return
+        Tile.boomFlag++
         if (this.isSuperTile()) {
             const emitter = this.scene.add.particles(this.x, this.y, 'flares', {
                 frame: ['red'],
@@ -259,7 +266,7 @@ export class Tile extends Phaser.GameObjects.Image {
 
             setTimeout(() => {
                 emitter.destroy()
-            }, 1500)
+            }, 500)
         } else {
             const emitter = this.scene.add.particles(this.x, this.y, 'flares', {
                 frame: [],
@@ -274,7 +281,7 @@ export class Tile extends Phaser.GameObjects.Image {
 
             setTimeout(() => {
                 emitter.destroy()
-            }, 1500)
+            }, 500)
         }
     }
 

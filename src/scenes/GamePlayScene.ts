@@ -1,4 +1,5 @@
 import { CONST, SCENE } from '../const/const'
+import ParticleEmitterPool from '../objects/ParticleEmitterPool'
 import ScoreBoard from '../objects/ScoreBoard'
 import { Tile } from '../objects/Tile'
 
@@ -33,6 +34,7 @@ export class GamePlayScene extends Phaser.Scene {
 
     public create() {
         this.add.image(0, 0, 'bg').setOrigin(0, 0)
+        ParticleEmitterPool.init(this)
         this.tileMap = new Map<string, Tile>()
 
         for (let i = 0; i < CONST.gridHeight; i++) {
@@ -45,7 +47,10 @@ export class GamePlayScene extends Phaser.Scene {
                             scene: this,
                             x: this.cameras.main.width / 2,
                             y: this.cameras.main.height / 2,
-                            texture: CONST.candyTypes[0],
+                            texture:
+                                CONST.candyTypes[
+                                    Phaser.Math.RND.between(0, CONST.candyTypes.length - 1)
+                                ],
                         },
                         i,
                         j
@@ -189,6 +194,8 @@ export class GamePlayScene extends Phaser.Scene {
             { x: 1, y: 0 },
             { x: -1, y: 0 },
         ]
+
+        Tile.boomFlag = 0
 
         const cols: number[] = []
         for (let i = 0; i < CONST.gridWidth; i++) cols.push(0)
@@ -420,6 +427,30 @@ export class GamePlayScene extends Phaser.Scene {
                 tile.updatePositon(false)
                 tile.angle = 0
             }
+        }
+
+        if (Tile.boomFlag > 10) {
+            const emitter = this.add.particles(
+                this.cameras.main.width / 2,
+                this.cameras.main.height / 2,
+                'flares',
+                {
+                    frame: ['red', 'blue', 'green'],
+                    lifespan: 4000,
+                    speed: { min: 300, max: 500 },
+                    scale: 1,
+                    gravityY: 150,
+                    blendMode: 'ADD',
+                    emitting: false,
+                }
+            )
+            emitter.explode(50)
+
+            setTimeout(() => {
+                emitter.destroy()
+            }, 2000)
+
+            Tile.boomFlag = 0
         }
 
         const queueMatch4Tween = []
