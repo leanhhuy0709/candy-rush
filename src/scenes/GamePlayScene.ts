@@ -90,11 +90,11 @@ export class GamePlayScene extends Phaser.Scene {
                         this.secondSelectedTile.unSelectEffect()
 
                         this.handleMatch((isMatch = true) => {
-                            /*if (!isMatch)
+                            if (!isMatch)
                                 this.swapTiles(() => {
                                     this.resetSelect()
                                 })
-                            else */ this.resetSelect()
+                            else this.resetSelect()
                         })
                     }
                 })
@@ -112,8 +112,6 @@ export class GamePlayScene extends Phaser.Scene {
     }
 
     private isValidSelect(): boolean {
-        return true
-        /*
         if (this.firstSelectedTile && this.secondSelectedTile) {
             const temp1x = this.firstSelectedTile.gridX,
                 temp1y = this.firstSelectedTile.gridY
@@ -123,7 +121,6 @@ export class GamePlayScene extends Phaser.Scene {
             return Math.abs(temp1x - temp2x) + Math.abs(temp1y - temp2y) === 1
         }
         return false
-        */
     }
 
     private swapTiles(onComplete: Function): void {
@@ -135,48 +132,26 @@ export class GamePlayScene extends Phaser.Scene {
 
             const time = 500
 
-            const tween1 = this.tweens.add({
-                targets: [this.firstSelectedTile],
-                x: x2,
-                y: y2,
-                duration: time,
-                ease: 'Linear',
-                onComplete: () => {
-                    if (!tween2.isActive()) {
-                        if (this.firstSelectedTile && this.secondSelectedTile)
-                            this.swapTilesWithoutEffect(
-                                this.firstSelectedTile.gridX,
-                                this.firstSelectedTile.gridY,
-                                this.secondSelectedTile.gridX,
-                                this.secondSelectedTile.gridY
-                            )
-                        onComplete()
-                        tween1.destroy()
-                        tween2.destroy()
-                    }
-                },
+            this.firstSelectedTile.goToPosition(x2, y2, undefined, undefined, time, () => {
+                if (this.firstSelectedTile && this.secondSelectedTile)
+                    this.swapTilesWithoutEffect(
+                        this.firstSelectedTile.gridX,
+                        this.firstSelectedTile.gridY,
+                        this.secondSelectedTile.gridX,
+                        this.secondSelectedTile.gridY
+                    )
+                onComplete()
             })
 
-            const tween2 = this.tweens.add({
-                targets: [this.secondSelectedTile],
-                x: x1,
-                y: y1,
-                duration: time,
-                ease: 'Linear',
-                onComplete: () => {
-                    if (!tween1.isActive()) {
-                        if (this.firstSelectedTile && this.secondSelectedTile)
-                            this.swapTilesWithoutEffect(
-                                this.firstSelectedTile.gridX,
-                                this.firstSelectedTile.gridY,
-                                this.secondSelectedTile.gridX,
-                                this.secondSelectedTile.gridY
-                            )
-                        onComplete()
-                        tween1.destroy()
-                        tween2.destroy()
-                    }
-                },
+            this.secondSelectedTile.goToPosition(x1, y1, undefined, undefined, time, () => {
+                if (this.firstSelectedTile && this.secondSelectedTile)
+                    this.swapTilesWithoutEffect(
+                        this.firstSelectedTile.gridX,
+                        this.firstSelectedTile.gridY,
+                        this.secondSelectedTile.gridX,
+                        this.secondSelectedTile.gridY
+                    )
+                onComplete()
             })
         }
     }
@@ -232,7 +207,7 @@ export class GamePlayScene extends Phaser.Scene {
         for (let i = 0; i < CONST.gridHeight; i++) {
             for (let j = 0; j < CONST.gridWidth; j++) {
                 const currentTile = this.getTile(i, j) as Tile
-                if (!currentTile) console.log('Error index tile!')
+                if (!currentTile) console.log('Error index tile!', this.tileMap)
                 const g1 = group.get(this.convertToKey(i, j))
 
                 let k = 0
@@ -253,6 +228,8 @@ export class GamePlayScene extends Phaser.Scene {
 
                         if (g1) key = g1
                         if (g2) key = g2
+
+                        let isBoom = false
 
                         if (tileBehind && tileBehind.getKey() === currentTile.getKey()) {
                             cols[currentTile.gridX]++
@@ -291,21 +268,7 @@ export class GamePlayScene extends Phaser.Scene {
                                 listGroup[key]++
                             }
 
-                            if (currentTile.isSuperTile()) {
-                                for (let m = -1; m <= 1; m++) {
-                                    for (let n = -1; n <= 1; n++) {
-                                        if (!group.has(this.convertToKey(i + m, j + n))) {
-                                            group.set(this.convertToKey(i + m, j + n), 0)
-                                            groupZeroBoom.push({ x: i + m, y: j + n })
-                                        }
-                                    }
-                                }
-                                currentTile.setSuper(false)
-                            } else if (currentTile.isMegaTile()) {
-                                //
-                            }
-
-                            break
+                            isBoom = true
                         }
 
                         if (tileNext2 && tileNext2.getKey() === currentTile.getKey()) {
@@ -347,6 +310,10 @@ export class GamePlayScene extends Phaser.Scene {
                                 listGroup[key]++
                             }
 
+                            isBoom = true
+                        }
+
+                        if (isBoom) {
                             if (currentTile.isSuperTile()) {
                                 for (let m = -1; m <= 1; m++) {
                                     for (let n = -1; n <= 1; n++) {
@@ -364,7 +331,6 @@ export class GamePlayScene extends Phaser.Scene {
                             } else if (currentTile.isMegaTile()) {
                                 //
                             }
-
                             break
                         }
                     }
@@ -378,17 +344,21 @@ export class GamePlayScene extends Phaser.Scene {
 
             if (g != 0) continue
 
-            cols[obj.x]++
+            if (obj.x < 0) console.log(obj.x)
             const tile = this.getTile(obj.x, obj.y)
 
             if (tile) {
+                cols[obj.x]++
                 tile.boom()
                 listBoom.push({ x: obj.x, y: obj.y, newY: -cols[obj.x] })
 
                 if (tile.isSuperTile()) {
                     for (let m = -1; m <= 1; m++) {
                         for (let n = -1; n <= 1; n++) {
-                            if (!group.has(this.convertToKey(obj.x + m, obj.y + n))) {
+                            if (
+                                !group.has(this.convertToKey(obj.x + m, obj.y + n)) &&
+                                this.getTile(obj.x + m, obj.y + n)
+                            ) {
                                 group.set(this.convertToKey(obj.x + m, obj.y + n), 0)
                                 groupZeroBoom.push({ x: obj.x + m, y: obj.y + n })
                             }
@@ -519,7 +489,7 @@ export class GamePlayScene extends Phaser.Scene {
                     this.setTile(tile.gridX, tile.gridY, tile)
                     tile.updatePositon(false)
                     tile.setSuper()
-                } else console.log('Error Tile!')
+                } else console.log('Error Tile!', cols)
             }
 
             this.scoreBoard.emitterScoreEffect(temp[i].x / listGroup[i], temp[i].y / listGroup[i])
@@ -605,7 +575,7 @@ export class GamePlayScene extends Phaser.Scene {
     }
 
     private handleIdleTime(): void {
-        if (this.idleTime > 5000) {
+        if (this.idleTime > 10000) {
             if (this.firstSelectedTile) {
                 this.firstSelectedTile.unSelectEffect()
                 this.firstSelectedTile = null
@@ -799,6 +769,7 @@ export class GamePlayScene extends Phaser.Scene {
                             const point = this.getPointFromShape(shape, val)
                             tile.x = point.x
                             tile.y = point.y
+                            tile.updateSuperEmitterPosition()
                         },
                     })
                 })

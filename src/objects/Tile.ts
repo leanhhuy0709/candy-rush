@@ -2,6 +2,7 @@ import { CONST } from '../const/const'
 import { IImageConstructor } from '../interfaces/image.interface'
 import { GamePlayScene } from '../scenes/GamePlayScene'
 
+const CHANCE = 0.9
 export class Tile extends Phaser.GameObjects.Image {
     private tween: Phaser.Tweens.Tween
     private graphics: Phaser.GameObjects.Graphics
@@ -12,6 +13,8 @@ export class Tile extends Phaser.GameObjects.Image {
     private hintTween: Phaser.Tweens.Tween
     private isSuper = false
     private isMega = false
+
+    private superEmitter: Phaser.GameObjects.Particles.ParticleEmitter | null
 
     public constructor(aParams: IImageConstructor, gridX: number, gridY: number) {
         super(aParams.scene, aParams.x, aParams.y, aParams.texture, aParams.frame)
@@ -97,7 +100,7 @@ export class Tile extends Phaser.GameObjects.Image {
 
     public updatePositon(
         isHaveEffect = true,
-        onComplete?: Function,
+        onCompleteAll?: Function,
         delay?: number,
         time?: number
     ): void {
@@ -127,18 +130,28 @@ export class Tile extends Phaser.GameObjects.Image {
                 ease: 'Power2',
                 onComplete: () => {
                     Tile.numTweenRunning--
-                    if (onComplete && Tile.numTweenRunning == 0) {
-                        onComplete()
+                    if (onCompleteAll && Tile.numTweenRunning == 0) {
+                        onCompleteAll()
                     }
                 },
             })
+            if (this.isSuper)
+                this.scene.tweens.add({
+                    targets: this.superEmitter,
+                    x: newX,
+                    y: newY,
+                    delay: delay,
+                    duration: duration,
+                    ease: 'Power2'
+                })
         } else {
             this.x = newX
             this.y = newY
         }
     }
 
-    public goToPosition(x: number, y: number, onComplete?: Function, delay?: number): void {
+    public goToPosition(x: number, y: number, onComplete?: Function, delay?: number, time?: number, onCompleteAll?: Function): void {
+        Tile.numTweenRunning++
         this.scene.tweens.add({
             targets: this,
             x: x,
@@ -147,11 +160,26 @@ export class Tile extends Phaser.GameObjects.Image {
             duration: 500,
             ease: 'Power2',
             onComplete: () => {
+                Tile.numTweenRunning--
                 if (onComplete) {
                     onComplete()
                 }
+                if (onCompleteAll && Tile.numTweenRunning == 0) {
+                    onCompleteAll()
+                }
             },
         })
+
+        if (this.isSuper) {
+            this.scene.tweens.add({
+                targets: this.superEmitter,
+                x: x,
+                y: y,
+                delay: delay,
+                duration: 500,
+                ease: 'Power2'
+            })
+        }
     }
 
     public setRandomTextures(coeffX?: number, coeffY?: number): void {
@@ -160,7 +188,7 @@ export class Tile extends Phaser.GameObjects.Image {
 
         //Increase Chance
         const chance = Math.random()
-        if (chance < 0.1) {
+        if (chance < CHANCE) {
             let x = this.gridX
             let y = this.gridY
 
@@ -201,28 +229,64 @@ export class Tile extends Phaser.GameObjects.Image {
     }
 
     public boom(): void {
-        const emitter = this.scene.add.particles(this.x, this.y, 'flares', {
-            frame: [],
-            lifespan: 400,
-            speed: { min: 150, max: 250 },
-            scale: { start: 0.3, end: 0 },
-            gravityY: 150,
-            blendMode: 'ADD',
-            emitting: false,
-        })
-        emitter.explode(16)
+        if (this.isSuperTile()) {
+            const emitter = this.scene.add.particles(this.x, this.y, 'flares', {
+                frame: ['red'],
+                lifespan: 400,
+                speed: { min: 150, max: 250 },
+                scale: { start: 0.3, end: 0 },
+                gravityY: 150,
+                blendMode: 'ADD',
+                emitting: false,
+            })
+            emitter.explode(16)
 
-        setTimeout(() => {
-            emitter.destroy()
-        }, 1500)
+            setTimeout(() => {
+                emitter.destroy()
+            }, 1500)
+        } else {
+            const emitter = this.scene.add.particles(this.x, this.y, 'flares', {
+                frame: [],
+                lifespan: 400,
+                speed: { min: 150, max: 250 },
+                scale: { start: 0.3, end: 0 },
+                gravityY: 150,
+                blendMode: 'ADD',
+                emitting: false,
+            })
+            emitter.explode(16)
+
+            setTimeout(() => {
+                emitter.destroy()
+            }, 1500)
+        }
     }
 
     public setSuper(value = true): void {
         this.isSuper = value
-        if (value)
-            this.setTint(0xff)
-        else 
-            this.clearTint()
+        if (value) {
+            //
+            this.superEmitter = this.scene.add
+                .particles(this.x, this.y + 20, 'flares', {
+                    frame: 'red',
+                    color: [
+                        0xf40d61, 0xfacc22, 0xf89800, 0xf83600, 0x9f0404, 0x4b4a4f, 0x353438,
+                        0x040404,
+                    ],
+                    lifespan: 500,
+                    angle: { min: -100, max: -80 },
+                    scale: { start: 0.75, end: 0, ease: 'sine.out' },
+                    speed: { min: 200, max: 300 },
+                    advance: 2000,
+                    blendMode: 'ADD',
+                })
+                .setDepth(6)
+        } else {
+            if (this.superEmitter) {
+                this.superEmitter.destroy()
+                this.superEmitter = null
+            }
+        }
     }
 
     public setMega(value = true): void {
@@ -235,5 +299,13 @@ export class Tile extends Phaser.GameObjects.Image {
 
     public isMegaTile(): boolean {
         return this.isMega
+    }
+
+    public updateSuperEmitterPosition(): void {
+        if (this.superEmitter)
+        {
+            this.superEmitter.x = this.x
+            this.superEmitter.y = this.y + 20
+        }
     }
 }

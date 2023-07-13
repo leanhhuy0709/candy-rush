@@ -7,17 +7,17 @@ export const CONST = {
     tileHeight: 72,
     margin: 10,
     candyTypes: [
-        'cookie1',
+        //'cookie1',
         'cookie2',
-        'croissant',
+        //'croissant',
         'cupcake',
-        'donut',
+        //'donut',
         'eclair',
-        'macaroon',
+        //'macaroon',
         'pie',
         'poptart1',
-        'poptart2',
-        'starcookie1',
+        //'poptart2',
+        //'starcookie1',
         'starcookie2'
     ],
 }
