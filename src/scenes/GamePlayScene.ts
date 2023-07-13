@@ -443,7 +443,7 @@ export class GamePlayScene extends Phaser.Scene {
                     blendMode: 'ADD',
                     emitting: false,
                 }
-            )
+            ).setDepth(6)
             emitter.explode(50)
 
             setTimeout(() => {

@@ -147,7 +147,7 @@ export default class ScoreBoard {
             lifespan: 1000,
             quantity: 1,
             scale: { start: 0.3, end: 0.1 },
-        })
+        }).setDepth(6)
 
         let percent =
             (this.score - this.levels[this.level - 1]) /
