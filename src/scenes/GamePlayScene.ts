@@ -53,9 +53,7 @@ export class GamePlayScene extends Phaser.Scene {
                 )
             }
         }
-        this.firstSelectedTile = this.getTile(0, 0) as Tile
-        this.secondSelectedTile = this.getTile(0, 1) as Tile
-
+        
         this.scoreBoard = new ScoreBoard(this)
 
         this.boardState = BOARD_STATE.HANDLING
@@ -233,7 +231,6 @@ export class GamePlayScene extends Phaser.Scene {
 
                         if (tileBehind && tileBehind.getKey() === currentTile.getKey()) {
                             cols[currentTile.gridX]++
-
                             currentTile.boom()
                             listBoom.push({ x: i, y: j, newY: -cols[currentTile.gridX] })
 
@@ -271,7 +268,7 @@ export class GamePlayScene extends Phaser.Scene {
                             isBoom = true
                         }
 
-                        if (tileNext2 && tileNext2.getKey() === currentTile.getKey()) {
+                        if (!isBoom && tileNext2 && tileNext2.getKey() === currentTile.getKey()) {
                             cols[currentTile.gridX]++
                             currentTile.boom()
                             listBoom.push({ x: i, y: j, newY: -cols[currentTile.gridX] })
@@ -728,6 +725,8 @@ export class GamePlayScene extends Phaser.Scene {
     }
 
     public shuffle(): void {
+        this.firstSelectedTile = this.getTile(0, 0) as Tile
+        this.secondSelectedTile = this.getTile(0, 1) as Tile
         this.idleTime = 0
         const shape = this.getRandomShape()
 
