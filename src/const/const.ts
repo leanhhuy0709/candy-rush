@@ -24,5 +24,6 @@ export const CONST = {
 
 export enum SCENE {
     LOADING = "LoadingScene",
-    GAMEPLAY = "GamePlayScene"
+    GAMEPLAY = "GamePlayScene",
+    MENU = 'MenuScene'
 }

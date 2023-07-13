@@ -148,18 +148,22 @@ export class Tile extends Phaser.GameObjects.Image {
         })
     }
 
-    public setRandomTextures(): void {
+    public setRandomTextures(coeffX?: number, coeffY?: number): void {
         let randomTileType: string =
             CONST.candyTypes[Phaser.Math.RND.between(0, CONST.candyTypes.length - 1)]
 
         //Increase Chance
 
         const chance = Math.random()
-        if (chance < 0.1)
+        if (chance < 0.8)
         {
         
-            const x = this.gridX
+            let x = this.gridX
             let y = this.gridY
+
+            if (coeffX) x = coeffX
+            if (coeffY) y = coeffY
+
             if (y < 0) y = 1
             const scene = this.scene as GamePlayScene
             const listCandyNextTo = []
