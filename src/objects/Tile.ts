@@ -60,11 +60,12 @@ export class Tile extends Phaser.GameObjects.Image {
 
     public unSpin(): void {
         this.tween.pause()
-        this.scene.tweens.add({
+        const tween = this.scene.tweens.add({
             targets: this,
             angle: 0,
             duration: 800,
             ease: 'Linear',
+            onComplete: () => tween.destroy(),
         })
     }
 
@@ -102,7 +103,8 @@ export class Tile extends Phaser.GameObjects.Image {
         isHaveEffect = true,
         onCompleteAll?: Function,
         delay?: number,
-        time?: number
+        time?: number,
+        onComplete?: Function
     ): void {
         //this function update x, y from GridX, GridY
         const w = this.scene.cameras.main.width
@@ -121,7 +123,7 @@ export class Tile extends Phaser.GameObjects.Image {
 
         if (isHaveEffect) {
             Tile.numTweenRunning++
-            this.scene.tweens.add({
+            const tween = this.scene.tweens.add({
                 targets: this,
                 x: newX,
                 y: newY,
@@ -129,30 +131,42 @@ export class Tile extends Phaser.GameObjects.Image {
                 duration: duration,
                 ease: 'Power2',
                 onComplete: () => {
+                    if (onComplete) onComplete()
                     Tile.numTweenRunning--
                     if (onCompleteAll && Tile.numTweenRunning == 0) {
                         onCompleteAll()
                     }
+
+                    tween.destroy()
                 },
             })
-            if (this.isSuper)
-                this.scene.tweens.add({
+            if (this.isSuper) {
+                const tween = this.scene.tweens.add({
                     targets: this.superEmitter,
                     x: newX,
                     y: newY,
                     delay: delay,
                     duration: duration,
-                    ease: 'Power2'
+                    ease: 'Power2',
+                    onComplete: () => tween.destroy(),
                 })
+            }
         } else {
             this.x = newX
             this.y = newY
         }
     }
 
-    public goToPosition(x: number, y: number, onComplete?: Function, delay?: number, time?: number, onCompleteAll?: Function): void {
+    public goToPosition(
+        x: number,
+        y: number,
+        onComplete?: Function,
+        delay?: number,
+        time?: number,
+        onCompleteAll?: Function
+    ): void {
         Tile.numTweenRunning++
-        this.scene.tweens.add({
+        const tween = this.scene.tweens.add({
             targets: this,
             x: x,
             y: y,
@@ -167,17 +181,19 @@ export class Tile extends Phaser.GameObjects.Image {
                 if (onCompleteAll && Tile.numTweenRunning == 0) {
                     onCompleteAll()
                 }
+                tween.destroy()
             },
         })
 
         if (this.isSuper) {
-            this.scene.tweens.add({
+            const tween = this.scene.tweens.add({
                 targets: this.superEmitter,
                 x: x,
                 y: y,
                 delay: delay,
                 duration: 500,
-                ease: 'Power2'
+                ease: 'Power2',
+                onComplete: () => tween.destroy(),
             })
         }
     }
@@ -302,8 +318,7 @@ export class Tile extends Phaser.GameObjects.Image {
     }
 
     public updateSuperEmitterPosition(): void {
-        if (this.superEmitter)
-        {
+        if (this.superEmitter) {
             this.superEmitter.x = this.x
             this.superEmitter.y = this.y + 20
         }

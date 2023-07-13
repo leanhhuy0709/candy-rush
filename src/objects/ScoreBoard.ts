@@ -156,7 +156,7 @@ export default class ScoreBoard {
         if (percent <= 0.05) percent = 0.05
         if (percent > 1) percent = 1
 
-        this.scene.tweens.add({
+        const tween = this.scene.tweens.add({
             targets: tempObj,
             x: progressBarX + percent * progressBarWidth,
             y: progressBarY + progressBarHeight,
@@ -164,6 +164,7 @@ export default class ScoreBoard {
             onComplete: () => {
                 tempObj.destroy()
                 emitter.destroy()
+                tween.destroy()
             },
         })
     }

@@ -53,7 +53,7 @@ export class GamePlayScene extends Phaser.Scene {
                 )
             }
         }
-        
+
         this.scoreBoard = new ScoreBoard(this)
 
         this.boardState = BOARD_STATE.HANDLING
@@ -190,16 +190,16 @@ export class GamePlayScene extends Phaser.Scene {
             { x: -1, y: 0 },
         ]
 
-        const cols = []
+        const cols: number[] = []
         for (let i = 0; i < CONST.gridWidth; i++) cols.push(0)
 
-        const listBoom = []
+        const listBoom: Array<{ x: number; y: number; newY: number }> = []
 
         const group = new Map<string, number>()
         let groupIndex = 1
         const listGroup = [0]
 
-        const groupZeroBoom = []
+        const groupZeroBoom: Array<{ x: number; y: number }> = []
 
         //traverse all tile, check tile boom
         for (let i = 0; i < CONST.gridHeight; i++) {
@@ -347,6 +347,30 @@ export class GamePlayScene extends Phaser.Scene {
             if (tile) {
                 cols[obj.x]++
                 tile.boom()
+                this.scoreBoard.addScore(15)
+
+                const text = this.add
+                    .text(tile.x, tile.y + 10, '15', {
+                        fontFamily: 'Cambria',
+                        fontSize: 25,
+                        color: COLOR_LIST[0],
+                    })
+                    .setDepth(6)
+                    .setOrigin(0.5, 0.5)
+                    .setAlpha(0)
+                    .setStroke('#000000', 2)
+
+                const tween = this.tweens.add({
+                    targets: text,
+                    alpha: 1,
+                    duration: 700,
+                    y: tile.y,
+                    onComplete: () => {
+                        text.destroy()
+                        tween.destroy()
+                    },
+                })
+
                 listBoom.push({ x: obj.x, y: obj.y, newY: -cols[obj.x] })
 
                 if (tile.isSuperTile()) {
@@ -395,6 +419,8 @@ export class GamePlayScene extends Phaser.Scene {
                 tile.angle = 0
             }
         }
+
+        const queueMatch4Tween = []
 
         //calculate score, handle match 4, match 5
         for (let i = 1; i < listGroup.length; i++) {
@@ -485,6 +511,11 @@ export class GamePlayScene extends Phaser.Scene {
                     tile.gridY = gridY
                     this.setTile(tile.gridX, tile.gridY, tile)
                     tile.updatePositon(false)
+
+                    //tween match 4
+
+                    queueMatch4Tween.push({ groupIdx: i, tile: tile })
+
                     tile.setSuper()
                 } else console.log('Error Tile!', cols)
             }
@@ -515,6 +546,69 @@ export class GamePlayScene extends Phaser.Scene {
             })
         }
 
+        //Before handle Fall, hide all tile have grid -1
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        for (const [_key, value] of this.tileMap) {
+            if (value.gridY < 0) value.setVisible(false)
+        }
+
+        let fallFlag = 0
+
+        for (let i = 0; i < queueMatch4Tween.length; i++)
+            fallFlag += listTileFromGroup[queueMatch4Tween[i].groupIdx].length
+
+        if (fallFlag == 0)
+            this.handleFall(listBoom, groupZeroBoom, listGroup, cols, combo, onComplete)
+        else {
+            for (let i = 0; i < queueMatch4Tween.length; i++) {
+                const tile = queueMatch4Tween[i].tile
+                const groupIdx = queueMatch4Tween[i].groupIdx
+                for (let j = 0; j < listTileFromGroup[groupIdx].length; j++) {
+                    const obj = listTileFromGroup[groupIdx][j]
+                    const image = new Tile(
+                        {
+                            scene: this,
+                            x: this.cameras.main.width / 2,
+                            y: this.cameras.main.height / 2,
+                            texture: tile.getKey(),
+                        },
+                        obj.x,
+                        obj.y
+                    )
+                    image.updatePositon(false)
+
+                    image.gridX = tile.gridX
+                    image.gridY = tile.gridY
+
+                    image.updatePositon(true, undefined, undefined, 500, () => {
+                        image.destroy()
+                        if (!tile.isSuperTile()) tile.setSuper()
+                        fallFlag--
+                        if (fallFlag == 0) {
+                            this.handleFall(
+                                listBoom,
+                                groupZeroBoom,
+                                listGroup,
+                                cols,
+                                combo,
+                                onComplete
+                            )
+                        }
+                    })
+                }
+            } //
+        }
+        //this.handleFall(listBoom, groupZeroBoom, listGroup, cols, combo, onComplete)
+    }
+
+    private handleFall(
+        listBoom: Array<{ x: number; y: number; newY: number }>,
+        groupZeroBoom: Array<{ x: number; y: number }>,
+        listGroup: number[],
+        cols: number[],
+        combo: number,
+        onComplete?: Function
+    ): void {
         //handle fall tile
         if (listBoom.length) {
             for (let i = 0; i < CONST.gridWidth; i++) {
@@ -524,11 +618,14 @@ export class GamePlayScene extends Phaser.Scene {
 
                     if (tile) {
                         if (num > 0) {
-                            if (j < 0)
+                            if (j < 0) {
                                 tile.setRandomTextures(undefined, CONST.gridWidth - cols[i] + j)
+                                tile.setVisible(true)
+                            }
                             this.removeTile(i, j)
                             tile.gridY = j + num
                             this.setTile(i, j + num, tile)
+
                             tile.updatePositon(
                                 true,
                                 () => {
@@ -538,7 +635,7 @@ export class GamePlayScene extends Phaser.Scene {
                                     }, combo + listGroup.length - 1)
                                 },
                                 undefined,
-                                1300
+                                (2000 / 8) * cols[i]
                             )
                         }
                     } else num++
@@ -555,14 +652,14 @@ export class GamePlayScene extends Phaser.Scene {
             for (let j = 0; j < CONST.gridWidth; j++) {
                 const tile = this.getTile(i, j) as Tile
                 if (!this.isIdleTweenPlaying) {
-                    this.tweens.add({
+                    const tween = this.tweens.add({
                         targets: tile,
                         angle: 360,
                         delay: ((i * CONST.gridHeight + j) / 64) * 1000,
                         duration: 1000,
                         ease: 'Linear',
                         onComplete: () => {
-                            //
+                            tween.destroy()
                         },
                     })
                 }
@@ -742,7 +839,7 @@ export class GamePlayScene extends Phaser.Scene {
                 const point = this.getPointFromShape(shape, temp.value)
 
                 tile.goToPosition(point.x, point.y, () => {
-                    this.tweens.add({
+                    const tween = this.tweens.add({
                         targets: temp,
                         value:
                             (i * CONST.gridHeight + j) / (CONST.gridHeight * CONST.gridWidth) + 1,
@@ -761,6 +858,7 @@ export class GamePlayScene extends Phaser.Scene {
                                 },
                                 Phaser.Math.Between(0, 500)
                             )
+                            tween.destroy()
                         },
                         onUpdate: () => {
                             let val = temp.value
@@ -799,5 +897,19 @@ export class GamePlayScene extends Phaser.Scene {
         else if (shape instanceof Phaser.Geom.Circle)
             return Phaser.Geom.Circle.GetPoint(shape, value)
         return Phaser.Geom.Ellipse.GetPoint(shape, value)
+    }
+
+    public getKeyFromString(key: string): { x: number; y: number } | undefined {
+        switch (key.length) {
+            case 2:
+                return { x: parseInt(key[0]), y: parseInt(key[1]) }
+            case 3:
+                if (key[0] == '-')
+                    return { x: parseInt(key.substring(0, 2)), y: parseInt(key.substring(2, 1)) }
+                else return { x: parseInt(key.substring(0, 1)), y: parseInt(key.substring(1, 2)) }
+            case 4:
+                return { x: parseInt(key.substring(0, 2)), y: parseInt(key.substring(2, 2)) }
+        }
+        return undefined
     }
 }
