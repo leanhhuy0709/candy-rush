@@ -2,7 +2,7 @@ import { CONST } from '../const/const'
 import { IImageConstructor } from '../interfaces/image.interface'
 import { GamePlayScene } from '../scenes/GamePlayScene'
 
-const CHANCE = 0.7
+const CHANCE = 0.6
 export class Tile extends Phaser.GameObjects.Image {
     private tween: Phaser.Tweens.Tween
     private graphics: Phaser.GameObjects.Graphics
