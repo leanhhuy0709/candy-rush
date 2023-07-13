@@ -18,6 +18,7 @@ export default class ScoreBoard {
     private progressBar: Phaser.GameObjects.Graphics
 
     private level = 1
+    private levels: number[] = []
 
     public constructor(scene: Phaser.Scene) {
         this.scene = scene
@@ -52,16 +53,25 @@ export default class ScoreBoard {
         this.updateProgressBar(0)
 
         this.targetText = scene.add
-            .text(progressBarX + progressBarWidth / 2, progressBarY - 20, `${levels[this.level]}`, {
-                fontFamily: 'Cambria',
-                fontSize: 20,
-                color: '#ffffff',
-                fontStyle: 'bold',
-                stroke: '#000000',
-                strokeThickness: 2,
-            })
+            .text(
+                progressBarX + progressBarWidth / 2,
+                progressBarY - 20,
+                `${this.levels[this.level]}`,
+                {
+                    fontFamily: 'Cambria',
+                    fontSize: 20,
+                    color: '#ffffff',
+                    fontStyle: 'bold',
+                    stroke: '#000000',
+                    strokeThickness: 2,
+                }
+            )
             .setDepth(6)
             .setOrigin(0.5, 0.5)
+
+        for (let i = 1; i < 100; i++) {
+            this.levels.push(((i * (i + 1)) / 2) * 500)
+        }
     }
 
     public addScore(score: number): void {
@@ -69,7 +79,8 @@ export default class ScoreBoard {
         this.scoreText.setText(this.score.toString())
 
         this.updateProgressBar(
-            (this.score - levels[this.level - 1]) / (levels[this.level] - levels[this.level - 1])
+            (this.score - this.levels[this.level - 1]) /
+                (this.levels[this.level] - this.levels[this.level - 1])
         )
     }
 
@@ -90,13 +101,12 @@ export default class ScoreBoard {
     }
 
     public handleGoToNextLevel(): void {
-        
-        while (this.score >= levels[this.level]) {
+        while (this.score >= this.levels[this.level]) {
             this.level++
-            this.targetText.setText(`${levels[this.level]}`)
+            this.targetText.setText(`${this.levels[this.level]}`)
             this.updateProgressBar(
-                (this.score - levels[this.level - 1]) /
-                    (levels[this.level] - levels[this.level - 1])
+                (this.score - this.levels[this.level - 1]) /
+                    (this.levels[this.level] - this.levels[this.level - 1])
             )
             const scene = this.scene as GamePlayScene
             scene.shuffle()
@@ -118,7 +128,8 @@ export default class ScoreBoard {
         })
 
         let percent =
-            (this.score - levels[this.level - 1]) / (levels[this.level] - levels[this.level - 1])
+            (this.score - this.levels[this.level - 1]) /
+            (this.levels[this.level] - this.levels[this.level - 1])
 
         if (percent > 1) percent = 1
 

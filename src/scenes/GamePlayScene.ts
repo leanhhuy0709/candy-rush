@@ -25,8 +25,6 @@ export class GamePlayScene extends Phaser.Scene {
 
     private boardState: BOARD_STATE
 
-    private emitter: Phaser.GameObjects.Particles.ParticleEmitter
-
     constructor() {
         super({
             key: SCENE.GAMEPLAY,
@@ -39,7 +37,20 @@ export class GamePlayScene extends Phaser.Scene {
 
         for (let i = 0; i < CONST.gridHeight; i++) {
             for (let j = 0; j < CONST.gridWidth; j++) {
-                this.setTile(i, j, this.getRandomTile(i, j))
+                this.setTile(
+                    i,
+                    j,
+                    new Tile(
+                        {
+                            scene: this,
+                            x: this.cameras.main.width / 2,
+                            y: this.cameras.main.height / 2,
+                            texture: CONST.candyTypes[0],
+                        },
+                        i,
+                        j
+                    )
+                )
             }
         }
         this.firstSelectedTile = this.getTile(0, 0) as Tile
@@ -63,22 +74,6 @@ export class GamePlayScene extends Phaser.Scene {
         }
     }
 
-    private getRandomTile(x: number, y: number): Tile {
-        const randomTileType: string =
-            CONST.candyTypes[Phaser.Math.RND.between(0, CONST.candyTypes.length - 1)]
-
-        return new Tile(
-            {
-                scene: this,
-                x: this.cameras.main.width / 2,
-                y: this.cameras.main.height / 2,
-                texture: randomTileType,
-            },
-            x,
-            y
-        )
-    }
-
     private onTileClicked(pointer: Phaser.Input.Pointer | null, gameObject: Tile) {
         this.idleTime = 0
         if (!this.firstSelectedTile) {
@@ -89,12 +84,10 @@ export class GamePlayScene extends Phaser.Scene {
             this.secondSelectedTile.selectEffect()
 
             if (this.isValidSelect()) {
-                //Handle
                 this.swapTiles(() => {
                     if (this.firstSelectedTile && this.secondSelectedTile) {
                         this.firstSelectedTile.unSelectEffect()
                         this.secondSelectedTile.unSelectEffect()
-                        this.boardState = BOARD_STATE.HANDLING
 
                         this.handleMatch((isMatch = true) => {
                             if (!isMatch)
@@ -102,7 +95,6 @@ export class GamePlayScene extends Phaser.Scene {
                                     this.resetSelect()
                                 })
                             else this.resetSelect()
-                            this.boardState = BOARD_STATE.IDLE
                         })
                     }
                 })
@@ -120,8 +112,6 @@ export class GamePlayScene extends Phaser.Scene {
     }
 
     private isValidSelect(): boolean {
-        return true
-        /*
         if (this.firstSelectedTile && this.secondSelectedTile) {
             const temp1x = this.firstSelectedTile.gridX,
                 temp1y = this.firstSelectedTile.gridY
@@ -130,7 +120,7 @@ export class GamePlayScene extends Phaser.Scene {
 
             return Math.abs(temp1x - temp2x) + Math.abs(temp1y - temp2y) === 1
         }
-        return false*/
+        return false
     }
 
     private swapTiles(onComplete: Function): void {
@@ -151,7 +141,7 @@ export class GamePlayScene extends Phaser.Scene {
                 onComplete: () => {
                     if (!tween2.isActive()) {
                         if (this.firstSelectedTile && this.secondSelectedTile)
-                            this.swapTwoTiles(
+                            this.swapTilesWithoutEffect(
                                 this.firstSelectedTile.gridX,
                                 this.firstSelectedTile.gridY,
                                 this.secondSelectedTile.gridX,
@@ -173,7 +163,7 @@ export class GamePlayScene extends Phaser.Scene {
                 onComplete: () => {
                     if (!tween1.isActive()) {
                         if (this.firstSelectedTile && this.secondSelectedTile)
-                            this.swapTwoTiles(
+                            this.swapTilesWithoutEffect(
                                 this.firstSelectedTile.gridX,
                                 this.firstSelectedTile.gridY,
                                 this.secondSelectedTile.gridX,
@@ -188,7 +178,7 @@ export class GamePlayScene extends Phaser.Scene {
         }
     }
 
-    private swapTwoTiles(x1: number, y1: number, x2: number, y2: number): void {
+    private swapTilesWithoutEffect(x1: number, y1: number, x2: number, y2: number): void {
         const tile1 = this.getTile(x1, y1)
         const tile2 = this.getTile(x2, y2)
         if (tile1 && tile2) {
@@ -215,10 +205,8 @@ export class GamePlayScene extends Phaser.Scene {
     }
 
     private handleMatch(onComplete?: Function, combo = 0): void {
-        //0 -> not visited
-        //1 -> visited
-        //2 -> boom
         this.idleTime = 0
+        this.boardState = BOARD_STATE.HANDLING
         const directions = [
             { x: 0, y: 1 },
             { x: 0, y: -1 },
@@ -406,7 +394,7 @@ export class GamePlayScene extends Phaser.Scene {
             scoreGot *= idx
             const gridX = Math.round(temp[i].gridX)
             const gridY = Math.round(temp[i].gridY)
-    
+
             if (listGroup[i] >= 4) {
                 let x = undefined
                 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -514,7 +502,8 @@ export class GamePlayScene extends Phaser.Scene {
 
                     if (tile) {
                         if (num > 0) {
-                            if (j < 0) tile.setRandomTextures(undefined, CONST.gridWidth - cols[i] + j)
+                            if (j < 0)
+                                tile.setRandomTextures(undefined, CONST.gridWidth - cols[i] + j)
                             this.removeTile(i, j)
                             tile.gridY = j + num
                             this.setTile(i, j + num, tile)
@@ -523,6 +512,7 @@ export class GamePlayScene extends Phaser.Scene {
                                 () => {
                                     this.handleMatch(() => {
                                         if (onComplete) onComplete()
+                                        this.boardState = BOARD_STATE.IDLE
                                     }, combo + listGroup.length - 1)
                                 },
                                 undefined,
@@ -532,7 +522,10 @@ export class GamePlayScene extends Phaser.Scene {
                     } else num++
                 }
             }
-        } else if (onComplete) onComplete(false)
+        } else {
+            if (onComplete) onComplete(false)
+            this.boardState = BOARD_STATE.IDLE
+        }
     }
 
     private idleEffect(): void {
