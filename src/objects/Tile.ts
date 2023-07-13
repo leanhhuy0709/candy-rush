@@ -1,6 +1,7 @@
 import { CONST } from '../const/const'
 import { IImageConstructor } from '../interfaces/image.interface'
 import { GamePlayScene } from '../scenes/GamePlayScene'
+import ParticleEmitterPool from './ParticleEmitterPool'
 
 const CHANCE = 0.3
 
@@ -253,7 +254,8 @@ export class Tile extends Phaser.GameObjects.Image {
         if (Tile.boomFlag > LIMIT_BOOM) return
         Tile.boomFlag++
         if (this.isSuperTile()) {
-            const emitter = this.scene.add.particles(this.x, this.y, 'flares', {
+            
+            const emitter = ParticleEmitterPool.getParticleEmitter(this.x, this.y, 'flares', {
                 frame: ['red'],
                 lifespan: 400,
                 speed: { min: 150, max: 250 },
@@ -265,10 +267,10 @@ export class Tile extends Phaser.GameObjects.Image {
             emitter.explode(16)
 
             setTimeout(() => {
-                emitter.destroy()
+                ParticleEmitterPool.removeParticleEmitter(emitter)
             }, 500)
         } else {
-            const emitter = this.scene.add.particles(this.x, this.y, 'flares', {
+            const emitter = ParticleEmitterPool.getParticleEmitter(this.x, this.y, 'flares', {
                 frame: [],
                 lifespan: 400,
                 speed: { min: 150, max: 250 },
@@ -280,7 +282,7 @@ export class Tile extends Phaser.GameObjects.Image {
             emitter.explode(16)
 
             setTimeout(() => {
-                emitter.destroy()
+                ParticleEmitterPool.removeParticleEmitter(emitter)
             }, 500)
         }
     }
@@ -289,8 +291,7 @@ export class Tile extends Phaser.GameObjects.Image {
         this.isSuper = value
         if (value) {
             //
-            this.superEmitter = this.scene.add
-                .particles(this.x, this.y + 20, 'flares', {
+            this.superEmitter = ParticleEmitterPool.getParticleEmitter(this.x, this.y + 20, 'flares', {
                     frame: 'red',
                     color: [
                         0xf40d61, 0xfacc22, 0xf89800, 0xf83600, 0x9f0404, 0x4b4a4f, 0x353438,
@@ -306,7 +307,7 @@ export class Tile extends Phaser.GameObjects.Image {
                 .setDepth(6)
         } else {
             if (this.superEmitter) {
-                this.superEmitter.destroy()
+                ParticleEmitterPool.removeParticleEmitter(this.superEmitter)
                 this.superEmitter = null
             }
         }

@@ -430,7 +430,7 @@ export class GamePlayScene extends Phaser.Scene {
         }
 
         if (Tile.boomFlag > 10) {
-            const emitter = this.add.particles(
+            const emitter = ParticleEmitterPool.getParticleEmitter(
                 this.cameras.main.width / 2,
                 this.cameras.main.height / 2,
                 'flares',
@@ -447,7 +447,7 @@ export class GamePlayScene extends Phaser.Scene {
             emitter.explode(50)
 
             setTimeout(() => {
-                emitter.destroy()
+                ParticleEmitterPool.removeParticleEmitter(emitter)
             }, 2000)
 
             Tile.boomFlag = 0

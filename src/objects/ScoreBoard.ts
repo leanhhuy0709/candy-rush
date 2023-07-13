@@ -1,4 +1,5 @@
 import { GamePlayScene } from '../scenes/GamePlayScene'
+import ParticleEmitterPool from './ParticleEmitterPool'
 
 const progressBarX = 30
 const progressBarY = 50
@@ -40,8 +41,7 @@ export default class ScoreBoard {
             this.levels.push(((i * (i + 1)) / 2) * 500)
         }
 
-        this.progressBarEmitter = this.scene.add
-            .particles(progressBarX, progressBarY + progressBarHeight / 2, 'flares', {
+        this.progressBarEmitter = ParticleEmitterPool.getParticleEmitter(progressBarX, progressBarY + progressBarHeight / 2, 'flares', {
                 frame: 'white',
                 color: [0x96e0da, 0x937ef3],
                 colorEase: 'quad.out',
@@ -138,7 +138,7 @@ export default class ScoreBoard {
     public emitterScoreEffect(x: number, y: number): void {
         const tempObj = this.scene.add.image(x, y, '').setVisible(false)
 
-        const emitter = this.scene.add.particles(0, 0, 'flares', {
+        const emitter = ParticleEmitterPool.getParticleEmitter(0, 0, 'flares', {
             frame: { frames: ['red', 'green', 'blue', 'yellow'], cycle: true },
             blendMode: Phaser.BlendModes.ADD,
             follow: tempObj,
@@ -163,7 +163,7 @@ export default class ScoreBoard {
             duration: 1000,
             onComplete: () => {
                 tempObj.destroy()
-                emitter.destroy()
+                ParticleEmitterPool.removeParticleEmitter(emitter)
                 tween.destroy()
             },
         })
