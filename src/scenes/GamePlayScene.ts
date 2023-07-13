@@ -25,7 +25,7 @@ export class GamePlayScene extends Phaser.Scene {
 
     private boardState: BOARD_STATE
 
-    constructor() {
+    public constructor() {
         super({
             key: SCENE.GAMEPLAY,
         })
@@ -90,11 +90,11 @@ export class GamePlayScene extends Phaser.Scene {
                         this.secondSelectedTile.unSelectEffect()
 
                         this.handleMatch((isMatch = true) => {
-                            if (!isMatch)
+                            /*if (!isMatch)
                                 this.swapTiles(() => {
                                     this.resetSelect()
                                 })
-                            else this.resetSelect()
+                            else */ this.resetSelect()
                         })
                     }
                 })
@@ -112,6 +112,8 @@ export class GamePlayScene extends Phaser.Scene {
     }
 
     private isValidSelect(): boolean {
+        return true
+        /*
         if (this.firstSelectedTile && this.secondSelectedTile) {
             const temp1x = this.firstSelectedTile.gridX,
                 temp1y = this.firstSelectedTile.gridY
@@ -121,6 +123,7 @@ export class GamePlayScene extends Phaser.Scene {
             return Math.abs(temp1x - temp2x) + Math.abs(temp1y - temp2y) === 1
         }
         return false
+        */
     }
 
     private swapTiles(onComplete: Function): void {
@@ -215,7 +218,6 @@ export class GamePlayScene extends Phaser.Scene {
         ]
 
         const cols = []
-
         for (let i = 0; i < CONST.gridWidth; i++) cols.push(0)
 
         const listBoom = []
@@ -224,29 +226,30 @@ export class GamePlayScene extends Phaser.Scene {
         let groupIndex = 1
         const listGroup = [0]
 
+        const groupZeroBoom = []
+
+        //traverse all tile, check tile boom
         for (let i = 0; i < CONST.gridHeight; i++) {
             for (let j = 0; j < CONST.gridWidth; j++) {
                 const currentTile = this.getTile(i, j) as Tile
-
                 if (!currentTile) console.log('Error index tile!')
+                const g1 = group.get(this.convertToKey(i, j))
 
-                for (let k = 0; k < directions.length; k++) {
+                let k = 0
+                for (; k < directions.length; k++) {
                     const tile = this.getTile(i + directions[k].x, j + directions[k].y)
 
                     if (tile && tile.getKey() === currentTile.getKey()) {
+                        const g2 = group.get(
+                            this.convertToKey(i + directions[k].x, j + directions[k].y)
+                        )
                         //-1 x x 2
-
                         const tileBehind = this.getTile(i - directions[k].x, j - directions[k].y)
                         const tileNext2 = this.getTile(
                             i + 2 * directions[k].x,
                             j + 2 * directions[k].y
                         )
-
                         let key = undefined
-                        const g1 = group.get(this.convertToKey(i, j))
-                        const g2 = group.get(
-                            this.convertToKey(i + directions[k].x, j + directions[k].y)
-                        )
 
                         if (g1) key = g1
                         if (g2) key = g2
@@ -254,6 +257,7 @@ export class GamePlayScene extends Phaser.Scene {
                         if (tileBehind && tileBehind.getKey() === currentTile.getKey()) {
                             cols[currentTile.gridX]++
 
+                            currentTile.boom()
                             listBoom.push({ x: i, y: j, newY: -cols[currentTile.gridX] })
 
                             const g3 = group.get(
@@ -287,12 +291,26 @@ export class GamePlayScene extends Phaser.Scene {
                                 listGroup[key]++
                             }
 
+                            if (currentTile.isSuperTile()) {
+                                for (let m = -1; m <= 1; m++) {
+                                    for (let n = -1; n <= 1; n++) {
+                                        if (!group.has(this.convertToKey(i + m, j + n))) {
+                                            group.set(this.convertToKey(i + m, j + n), 0)
+                                            groupZeroBoom.push({ x: i + m, y: j + n })
+                                        }
+                                    }
+                                }
+                                currentTile.setSuper(false)
+                            } else if (currentTile.isMegaTile()) {
+                                //
+                            }
+
                             break
                         }
 
                         if (tileNext2 && tileNext2.getKey() === currentTile.getKey()) {
                             cols[currentTile.gridX]++
-
+                            currentTile.boom()
                             listBoom.push({ x: i, y: j, newY: -cols[currentTile.gridX] })
 
                             const g3 = group.get(
@@ -329,6 +347,24 @@ export class GamePlayScene extends Phaser.Scene {
                                 listGroup[key]++
                             }
 
+                            if (currentTile.isSuperTile()) {
+                                for (let m = -1; m <= 1; m++) {
+                                    for (let n = -1; n <= 1; n++) {
+                                        if (
+                                            !group.has(this.convertToKey(i + m, j + n)) &&
+                                            this.getTile(i + m, j + n)
+                                        ) {
+                                            group.set(this.convertToKey(i + m, j + n), 0)
+                                            groupZeroBoom.push({ x: i + m, y: j + n })
+                                        }
+                                    }
+                                }
+
+                                currentTile.setSuper(false)
+                            } else if (currentTile.isMegaTile()) {
+                                //
+                            }
+
                             break
                         }
                     }
@@ -336,8 +372,41 @@ export class GamePlayScene extends Phaser.Scene {
             }
         }
 
+        while (groupZeroBoom.length > 0) {
+            const obj = groupZeroBoom.pop() as { x: number; y: number }
+            const g = group.get(this.convertToKey(obj.x, obj.y))
+
+            if (g != 0) continue
+
+            cols[obj.x]++
+            const tile = this.getTile(obj.x, obj.y)
+
+            if (tile) {
+                tile.boom()
+                listBoom.push({ x: obj.x, y: obj.y, newY: -cols[obj.x] })
+
+                if (tile.isSuperTile()) {
+                    for (let m = -1; m <= 1; m++) {
+                        for (let n = -1; n <= 1; n++) {
+                            if (!group.has(this.convertToKey(obj.x + m, obj.y + n))) {
+                                group.set(this.convertToKey(obj.x + m, obj.y + n), 0)
+                                groupZeroBoom.push({ x: obj.x + m, y: obj.y + n })
+                            }
+                        }
+                    }
+                    tile.setSuper(false)
+                } else {
+                    //
+                }
+            }
+        }
+
+        //traverse tileBoom to remove Tile and group tile to listTileFromGroup
         const temp = []
         for (let i = 0; i < listGroup.length; i++) temp.push({ x: 0, y: 0, gridX: 0, gridY: 0 })
+
+        const listTileFromGroup: Array<Array<{ x: number; y: number; tile: Tile }>> = []
+        for (let i = 0; i < listGroup.length; i++) listTileFromGroup.push([])
 
         for (let i = 0; i < listBoom.length; i++) {
             const data = listBoom[i]
@@ -345,12 +414,13 @@ export class GamePlayScene extends Phaser.Scene {
 
             if (tile) {
                 const groupID = group.get(this.convertToKey(data.x, data.y)) as number
-                temp[groupID].x += tile.x
-                temp[groupID].y += tile.y + 10
-                temp[groupID].gridX = tile.gridX
-                temp[groupID].gridY = tile.gridY
-
-                //
+                if (groupID) {
+                    temp[groupID].x += tile.x
+                    temp[groupID].y += tile.y + 10
+                    temp[groupID].gridX = tile.gridX
+                    temp[groupID].gridY = tile.gridY
+                    listTileFromGroup[groupID].push({ x: tile.gridX, y: tile.gridY, tile: tile })
+                }
                 this.removeTile(data.x, data.y)
                 tile.gridY = data.newY
                 this.setTile(data.x, data.newY, tile)
@@ -359,6 +429,7 @@ export class GamePlayScene extends Phaser.Scene {
             }
         }
 
+        //calculate score, handle match 4, match 5
         for (let i = 1; i < listGroup.length; i++) {
             let scoreGot = 0
             switch (listGroup[i]) {
@@ -392,80 +463,63 @@ export class GamePlayScene extends Phaser.Scene {
             let idx = combo + i
             if (idx >= COLOR_LIST.length) idx = COLOR_LIST.length - 1
             scoreGot *= idx
-            const gridX = Math.round(temp[i].gridX)
-            const gridY = Math.round(temp[i].gridY)
+
+            //handle location of super/mega tile in match >= 4
+
+            let gridX = -1
+            let gridY = -1
+
+            const checkMapX = new Map<number, number>()
+            const checkMapY = new Map<number, number>()
+            for (let j = 0; j < listTileFromGroup[i].length; j++) {
+                const obj = listTileFromGroup[i][j]
+                if (!checkMapX.has(obj.x)) checkMapX.set(obj.x, 0)
+                if (!checkMapY.has(obj.y)) checkMapY.set(obj.y, 0)
+
+                checkMapX.set(obj.x, (checkMapX.get(obj.x) as number) + 1)
+                checkMapY.set(obj.y, (checkMapY.get(obj.y) as number) + 1)
+            }
+            let maxValueX = -1,
+                maxValueY = -1
+            for (const [key, value] of checkMapX) {
+                if (maxValueX < value) {
+                    maxValueX = value
+                    gridX = key
+                }
+            }
+            for (const [key, value] of checkMapY) {
+                if (maxValueY < value) {
+                    maxValueY = value
+                    gridY = key
+                }
+            }
+            let j = 0
+            for (; j < listTileFromGroup[i].length; j++) {
+                const obj = listTileFromGroup[i][j]
+                if (obj.x == gridX && obj.y == gridY) break
+            }
+            if (j == listTileFromGroup[i].length) {
+                let j = 0
+                for (; j < listTileFromGroup[i].length; j++) {
+                    const obj = listTileFromGroup[i][j]
+                    if (obj.x == gridX) {
+                        gridY = obj.y
+                        break
+                    }
+                }
+            }
 
             if (listGroup[i] >= 4) {
-                let x = undefined
-                // eslint-disable-next-line @typescript-eslint/no-unused-vars
-                for (const [k, value] of group) {
-                    const xKey = Number(k[0])
-
-                    if (xKey == gridX) {
-                        x = xKey
-                        break
-                    }
-                }
-
-                if (x) {
-                    const y = -cols[x]
-
-                    cols[x]--
-
-                    const tile = this.getTile(x, y)
-
-                    if (tile) {
-                        this.removeTile(x, y)
-                        tile.gridX = gridX
-                        tile.gridY = gridY
-                        this.setTile(gridX, gridY, tile)
-                        tile.updatePositon(false)
-                        tile.scale = 0
-
-                        this.tweens.add({
-                            targets: tile,
-                            scale: 1,
-                            duration: 2000,
-                        })
-                    } else console.log('Error Tile!')
-                }
-            } else if (listGroup[i] >= 5) {
-                /*
-                console.log(temp[i].gridX, temp[i].gridY, gridX, gridY)
-                let x = undefined
-                // eslint-disable-next-line @typescript-eslint/no-unused-vars
-                for (const [k, value] of group) {
-                    const xKey = Number(k[0])
-
-                    if (xKey == gridX) {
-                        x = xKey
-                        break
-                    }
-                }
-
-                if (x) {
-                    const y = -cols[x]
-
-                    cols[x]--
-
-                    const tile = this.getTile(x, y)
-
-                    if (tile) {
-                        this.removeTile(x, y)
-                        tile.gridX = gridX
-                        tile.gridY = gridY
-                        this.setTile(gridX, gridY, tile)
-                        tile.updatePositon(false)
-                        tile.scale = 0
-
-                        this.tweens.add({
-                            targets: tile,
-                            scale: 1,
-                            duration: 2000,
-                        })
-                    } else console.log('Error Tile!')
-                }
-                */
+                const tile = this.getTile(gridX, -cols[gridX])
+                if (tile) {
+                    cols[tile.gridX]--
+                    this.removeTile(tile.gridX, tile.gridY)
+                    tile.gridX = gridX
+                    tile.gridY = gridY
+                    this.setTile(tile.gridX, tile.gridY, tile)
+                    tile.updatePositon(false)
+                    tile.setSuper()
+                } else console.log('Error Tile!')
             }
 
             this.scoreBoard.emitterScoreEffect(temp[i].x / listGroup[i], temp[i].y / listGroup[i])
@@ -494,6 +548,7 @@ export class GamePlayScene extends Phaser.Scene {
             })
         }
 
+        //handle fall tile
         if (listBoom.length) {
             for (let i = 0; i < CONST.gridWidth; i++) {
                 let num = 0
@@ -681,7 +736,9 @@ export class GamePlayScene extends Phaser.Scene {
         this.hintTile2 = listTile[1]
         if (this.hintTile1 && this.hintTile2) {
             this.hintTile1.showHint()
-            this.hintTile2.showHint()
+            this.hintTile2.showHint() //test auto play
+            //this.onTileClicked(null, this.hintTile1)
+            //this.onTileClicked(null, this.hintTile2)
         }
     }
 

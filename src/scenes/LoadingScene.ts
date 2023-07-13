@@ -16,6 +16,6 @@ export class LoadingScene extends Phaser.Scene {
     }
 
     update(): void {
-        this.scene.start(SCENE.GAMEPLAY)
+        this.scene.start(SCENE.MENU)
     }
 }

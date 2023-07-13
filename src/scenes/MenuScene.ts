@@ -11,7 +11,7 @@ export default class MenuScene extends Phaser.Scene {
         this.add.image(0, 0, 'bg').setOrigin(0, 0)
 
         this.add
-            .text(this.cameras.main.width / 2, 200, 'CANDY CRUSH\nSAGA', {
+            .text(this.cameras.main.width / 2, 200, 'CANDY CRUSH', {
                 fontFamily: 'Cambria',
                 fontSize: 60,
                 color: '#ffffff',

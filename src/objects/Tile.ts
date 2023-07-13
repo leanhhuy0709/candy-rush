@@ -9,10 +9,11 @@ export class Tile extends Phaser.GameObjects.Image {
     public gridY: number
 
     public static numTweenRunning = 0
-
     private hintTween: Phaser.Tweens.Tween
+    private isSuper = false
+    private isMega = false
 
-    constructor(aParams: IImageConstructor, gridX: number, gridY: number) {
+    public constructor(aParams: IImageConstructor, gridX: number, gridY: number) {
         super(aParams.scene, aParams.x, aParams.y, aParams.texture, aParams.frame)
 
         this.setOrigin(0.5, 0.5).setInteractive().setDepth(5)
@@ -59,8 +60,8 @@ export class Tile extends Phaser.GameObjects.Image {
         this.scene.tweens.add({
             targets: this,
             angle: 0,
-            duration: 500,
-            ease: 'Power2',
+            duration: 800,
+            ease: 'Linear',
         })
     }
 
@@ -94,7 +95,12 @@ export class Tile extends Phaser.GameObjects.Image {
         this.hideGraphics()
     }
 
-    public updatePositon(isHaveEffect = true, onComplete?: Function, delay?: number, time?: number): void {
+    public updatePositon(
+        isHaveEffect = true,
+        onComplete?: Function,
+        delay?: number,
+        time?: number
+    ): void {
         //this function update x, y from GridX, GridY
         const w = this.scene.cameras.main.width
 
@@ -154,9 +160,7 @@ export class Tile extends Phaser.GameObjects.Image {
 
         //Increase Chance
         const chance = Math.random()
-        if (chance < 0.5)
-        {
-        
+        if (chance < 0.1) {
             let x = this.gridX
             let y = this.gridY
 
@@ -171,9 +175,10 @@ export class Tile extends Phaser.GameObjects.Image {
             if (scene.getTile(x, y - 1)) listCandyNextTo.push(scene.getTile(x, y - 1))
             if (scene.getTile(x, y + 1)) listCandyNextTo.push(scene.getTile(x, y + 1))
 
-            if (listCandyNextTo.length > 0)
-            {
-                randomTileType = (listCandyNextTo[Phaser.Math.Between(0, listCandyNextTo.length - 1)] as Tile).getKey()
+            if (listCandyNextTo.length > 0) {
+                randomTileType = (
+                    listCandyNextTo[Phaser.Math.Between(0, listCandyNextTo.length - 1)] as Tile
+                ).getKey()
             }
         }
         this.setTexture(randomTileType)
@@ -193,5 +198,42 @@ export class Tile extends Phaser.GameObjects.Image {
             ease: 'Linear',
         })
         this.hideGraphics()
+    }
+
+    public boom(): void {
+        const emitter = this.scene.add.particles(this.x, this.y, 'flares', {
+            frame: [],
+            lifespan: 400,
+            speed: { min: 150, max: 250 },
+            scale: { start: 0.3, end: 0 },
+            gravityY: 150,
+            blendMode: 'ADD',
+            emitting: false,
+        })
+        emitter.explode(16)
+
+        setTimeout(() => {
+            emitter.destroy()
+        }, 1500)
+    }
+
+    public setSuper(value = true): void {
+        this.isSuper = value
+        if (value)
+            this.setTint(0xff)
+        else 
+            this.clearTint()
+    }
+
+    public setMega(value = true): void {
+        this.isMega = value
+    }
+
+    public isSuperTile(): boolean {
+        return this.isSuper
+    }
+
+    public isMegaTile(): boolean {
+        return this.isMega
     }
 }
