@@ -134,7 +134,7 @@ export class Tile extends Phaser.GameObjects.Image {
                 y: newY,
                 delay: delay,
                 duration: duration,
-                ease: 'Power2',
+                ease: Phaser.Math.Easing.Bounce.Out,
                 onComplete: () => {
                     if (onComplete) onComplete()
                     Tile.numTweenRunning--
@@ -145,14 +145,15 @@ export class Tile extends Phaser.GameObjects.Image {
                     tween.destroy()
                 },
             })
-            if (this.isSuper) {
+            if (this.superEmitter) {
                 const tween = this.scene.tweens.add({
                     targets: this.superEmitter,
+                    
                     x: newX,
-                    y: newY,
+                    y: newY + 10,
                     delay: delay,
                     duration: duration,
-                    ease: 'Power2',
+                    ease: Phaser.Math.Easing.Bounce.Out,
                     onComplete: () => tween.destroy(),
                 })
             }
@@ -190,14 +191,14 @@ export class Tile extends Phaser.GameObjects.Image {
             },
         })
 
-        if (this.isSuper) {
+        if (this.superEmitter) {
             const tween = this.scene.tweens.add({
                 targets: this.superEmitter,
                 x: x,
-                y: y,
+                y: y + 10,
                 delay: delay,
                 duration: 500,
-                ease: 'Power2',
+                ease: Phaser.Math.Easing.Bounce.Out,
                 onComplete: () => tween.destroy(),
             })
         }
@@ -253,8 +254,7 @@ export class Tile extends Phaser.GameObjects.Image {
     public boom(): void {
         if (Tile.boomFlag > LIMIT_BOOM) return
         Tile.boomFlag++
-        if (this.isSuperTile()) {
-            
+        if (this.isSuperTile() || this.isMegaTile()) {
             const emitter = ParticleEmitterPool.getParticleEmitter(this.x, this.y, 'flares', {
                 frame: ['red'],
                 lifespan: 400,
@@ -289,32 +289,55 @@ export class Tile extends Phaser.GameObjects.Image {
 
     public setSuper(value = true): void {
         this.isSuper = value
+        if (this.superEmitter) {
+            ParticleEmitterPool.removeParticleEmitter(this.superEmitter)
+            this.superEmitter = null
+        }
         if (value) {
             //
-            this.superEmitter = ParticleEmitterPool.getParticleEmitter(this.x, this.y + 20, 'flares', {
-                    frame: 'red',
-                    color: [
-                        0xf40d61, 0xfacc22, 0xf89800, 0xf83600, 0x9f0404, 0x4b4a4f, 0x353438,
-                        0x040404,
-                    ],
+            this.superEmitter = ParticleEmitterPool.getParticleEmitter(
+                this.x,
+                this.y + 20,
+                'flares',
+                {
+                    frame: 'blue',
+                    color: [0x000f100],
+                    colorEase: 'quart.out',
                     lifespan: 500,
                     angle: { min: -100, max: -80 },
                     scale: { start: 0.75, end: 0, ease: 'sine.out' },
                     speed: { min: 200, max: 300 },
                     advance: 2000,
                     blendMode: 'ADD',
-                })
-                .setDepth(6)
-        } else {
-            if (this.superEmitter) {
-                ParticleEmitterPool.removeParticleEmitter(this.superEmitter)
-                this.superEmitter = null
-            }
+                }
+            ).setDepth(3)
         }
     }
 
     public setMega(value = true): void {
         this.isMega = value
+        if (this.superEmitter) {
+            ParticleEmitterPool.removeParticleEmitter(this.superEmitter)
+            this.superEmitter = null
+        }
+        if (value) {
+            //
+            this.superEmitter = ParticleEmitterPool.getParticleEmitter(
+                this.x,
+                this.y + 20,
+                'flares',
+                {
+                    frame: ['red'],
+                    color: [0xff0000],
+                    lifespan: 500,
+                    angle: { min: -100, max: -80 },
+                    scale: { start: 0.75, end: 0, ease: 'sine.out' },
+                    speed: { min: 200, max: 300 },
+                    advance: 2000,
+                    blendMode: 'ADD',
+                }
+            ).setDepth(3)
+        }
     }
 
     public isSuperTile(): boolean {
@@ -328,7 +351,7 @@ export class Tile extends Phaser.GameObjects.Image {
     public updateSuperEmitterPosition(): void {
         if (this.superEmitter) {
             this.superEmitter.x = this.x
-            this.superEmitter.y = this.y + 20
+            this.superEmitter.y = this.y + 10
         }
     }
 }

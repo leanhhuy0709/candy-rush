@@ -8,8 +8,11 @@ export enum BOARD_STATE {
     HANDLING,
 }
 
-const COLOR_LIST = ['#ffffff', '#bcffe3', '#20b2aa', '#ff1919']
+const COLOR_LIST = ['#ffffff', '#bcffe3', '#20b2aa', '#ffd966']
 
+const IS_DEBUG = false
+const IS_AUTO_PLAY = true
+const IDLE_TIME = 2000
 export class GamePlayScene extends Phaser.Scene {
     private tileMap: Map<string, Tile>
 
@@ -78,6 +81,7 @@ export class GamePlayScene extends Phaser.Scene {
     }
 
     private onTileClicked(pointer: Phaser.Input.Pointer | null, gameObject: Tile) {
+        if (this.boardState != BOARD_STATE.IDLE) return
         this.idleTime = 0
         if (!this.firstSelectedTile) {
             this.firstSelectedTile = gameObject
@@ -93,6 +97,10 @@ export class GamePlayScene extends Phaser.Scene {
                         this.secondSelectedTile.unSelectEffect()
 
                         this.handleMatch((isMatch = true) => {
+                            if (IS_DEBUG) {
+                                this.resetSelect()
+                                return
+                            }
                             if (!isMatch)
                                 this.swapTiles(() => {
                                     this.resetSelect()
@@ -110,11 +118,14 @@ export class GamePlayScene extends Phaser.Scene {
     }
 
     private resetSelect(): void {
+        if (this.firstSelectedTile) this.firstSelectedTile.unSelectEffect()
+        if (this.secondSelectedTile) this.secondSelectedTile.unSelectEffect()
         this.firstSelectedTile = null
         this.secondSelectedTile = null
     }
 
     private isValidSelect(): boolean {
+        if (IS_DEBUG) return true
         if (this.firstSelectedTile && this.secondSelectedTile) {
             const temp1x = this.firstSelectedTile.gridX,
                 temp1y = this.firstSelectedTile.gridY
@@ -185,7 +196,7 @@ export class GamePlayScene extends Phaser.Scene {
         this.tileMap.delete(i.toString() + j.toString())
     }
 
-    private handleMatch(onComplete?: Function, combo = 0): void {
+    private handleMatch(onComplete?: Function, combo = 1): void {
         this.idleTime = 0
         this.boardState = BOARD_STATE.HANDLING
         const directions = [
@@ -333,11 +344,91 @@ export class GamePlayScene extends Phaser.Scene {
                                     }
                                 }
 
+                                //effect big 4
+                                this.scoreBoard.emitterScoreEffect(
+                                    currentTile.x,
+                                    currentTile.y,
+                                    () => this.scoreBoard.addScore(250 * (combo < 4 ? combo : 4))
+                                )
+
+                                const text = this.add
+                                    .text(
+                                        currentTile.x,
+                                        currentTile.y + 10,
+                                        (250 * (combo < 4 ? combo : 4)).toString(),
+                                        {
+                                            fontFamily: 'Cambria',
+                                            fontSize: 32,
+                                            color: COLOR_LIST[1],
+                                        }
+                                    )
+                                    .setDepth(6)
+                                    .setOrigin(0.5, 0.5)
+                                    .setAlpha(0)
+                                    .setStroke('#000000', 2)
+
+                                const tween = this.tweens.add({
+                                    targets: text,
+                                    alpha: 1,
+                                    duration: 700,
+                                    y: currentTile.y,
+                                    onComplete: () => {
+                                        text.destroy()
+                                        tween.destroy()
+                                    },
+                                })
+
                                 currentTile.setSuper(false)
                             } else if (currentTile.isMegaTile()) {
-                                //
+                                for (let m = 0; m <= CONST.gridWidth; m++) {
+                                    if (!group.has(this.convertToKey(m, j)) && this.getTile(m, j)) {
+                                        group.set(this.convertToKey(m, j), 0)
+                                        groupZeroBoom.push({ x: m, y: j })
+                                    }
+                                }
+                                for (let m = 0; m <= CONST.gridHeight; m++) {
+                                    if (!group.has(this.convertToKey(i, m)) && this.getTile(i, m)) {
+                                        group.set(this.convertToKey(i, m), 0)
+                                        groupZeroBoom.push({ x: i, y: m })
+                                    }
+                                }
+
+                                //effect big 5
+                                this.scoreBoard.emitterScoreEffect(
+                                    currentTile.x,
+                                    currentTile.y,
+                                    () => this.scoreBoard.addScore(600 * (combo < 4 ? combo : 4))
+                                )
+
+                                const text = this.add
+                                    .text(
+                                        currentTile.x,
+                                        currentTile.y + 10,
+                                        (600 * (combo < 4 ? combo : 4)).toString(),
+                                        {
+                                            fontFamily: 'Cambria',
+                                            fontSize: 32,
+                                            color: COLOR_LIST[1],
+                                        }
+                                    )
+                                    .setDepth(6)
+                                    .setOrigin(0.5, 0.5)
+                                    .setAlpha(0)
+                                    .setStroke('#000000', 2)
+
+                                const tween = this.tweens.add({
+                                    targets: text,
+                                    alpha: 1,
+                                    duration: 700,
+                                    y: currentTile.y,
+                                    onComplete: () => {
+                                        text.destroy()
+                                        tween.destroy()
+                                    },
+                                })
+
+                                currentTile.setMega(false)
                             }
-                            //break
                         }
                     }
                 }
@@ -356,29 +447,6 @@ export class GamePlayScene extends Phaser.Scene {
             if (tile) {
                 cols[obj.x]++
                 tile.boom()
-                this.scoreBoard.addScore(15)
-
-                const text = this.add
-                    .text(tile.x, tile.y + 10, '15', {
-                        fontFamily: 'Cambria',
-                        fontSize: 25,
-                        color: COLOR_LIST[0],
-                    })
-                    .setDepth(6)
-                    .setOrigin(0.5, 0.5)
-                    .setAlpha(0)
-                    .setStroke('#000000', 2)
-
-                const tween = this.tweens.add({
-                    targets: text,
-                    alpha: 1,
-                    duration: 700,
-                    y: tile.y,
-                    onComplete: () => {
-                        text.destroy()
-                        tween.destroy()
-                    },
-                })
 
                 listBoom.push({ x: obj.x, y: obj.y, newY: -cols[obj.x] })
 
@@ -395,8 +463,21 @@ export class GamePlayScene extends Phaser.Scene {
                         }
                     }
                     tile.setSuper(false)
-                } else {
-                    //
+                } else if (tile.isMegaTile()) {
+                    for (let m = 0; m <= CONST.gridWidth; m++) {
+                        if (!group.has(this.convertToKey(m, obj.y)) && this.getTile(m, obj.y)) {
+                            group.set(this.convertToKey(m, obj.y), 0)
+                            groupZeroBoom.push({ x: m, y: obj.y })
+                        }
+                    }
+                    for (let m = 0; m <= CONST.gridHeight; m++) {
+                        if (!group.has(this.convertToKey(obj.x, m)) && this.getTile(obj.x, m)) {
+                            group.set(this.convertToKey(obj.x, m), 0)
+                            groupZeroBoom.push({ x: obj.x, y: m })
+                        }
+                    }
+
+                    tile.setMega(false)
                 }
             }
         }
@@ -455,6 +536,7 @@ export class GamePlayScene extends Phaser.Scene {
 
         const queueMatch4Tween = []
 
+        let color = ''
         //calculate score, handle match 4, match 5
         for (let i = 1; i < listGroup.length; i++) {
             let scoreGot = 0
@@ -466,29 +548,40 @@ export class GamePlayScene extends Phaser.Scene {
                     break
                 case 3:
                     scoreGot = 30
+                    color = COLOR_LIST[0]
                     break
                 case 4:
                     scoreGot = 60
+                    color = COLOR_LIST[0]
                     break
                 case 5:
                     scoreGot = 100
+                    color = COLOR_LIST[0]
                     break
                 case 6:
                     scoreGot = 200
+                    color = COLOR_LIST[1]
                     break
                 case 7:
                     scoreGot = 400
+                    color = COLOR_LIST[1]
                     break
                 case 8:
                     scoreGot = 700
+                    color = COLOR_LIST[2]
+                    break
+                case 9:
+                    scoreGot = 1000
+                    color = COLOR_LIST[2]
                     break
                 default:
-                    scoreGot = 1000
+                    scoreGot = listGroup[i] * 40 + 1000
+                    color = COLOR_LIST[3]
                     break
             }
-            let idx = combo + i
+            let idx = combo - 1
             if (idx >= COLOR_LIST.length) idx = COLOR_LIST.length - 1
-            scoreGot *= idx
+            scoreGot *= idx + 1
 
             //handle location of super/mega tile in match >= 4
 
@@ -538,29 +631,34 @@ export class GamePlayScene extends Phaser.Scene {
             if (listGroup[i] >= 4) {
                 const tile = this.getTile(gridX, -cols[gridX])
                 if (tile) {
+                    tile.setTexture(listTileFromGroup[i][0].tile.getKey())
+
                     cols[tile.gridX]--
                     this.removeTile(tile.gridX, tile.gridY)
                     tile.gridX = gridX
                     tile.gridY = gridY
                     this.setTile(tile.gridX, tile.gridY, tile)
+
                     tile.updatePositon(false)
 
                     //tween match 4
-
                     queueMatch4Tween.push({ groupIdx: i, tile: tile })
-
-                    tile.setSuper()
+                    if (listGroup[i] == 4) tile.setSuper()
+                    else tile.setMega()
                 } else console.log('Error Tile!', cols)
             }
 
-            this.scoreBoard.emitterScoreEffect(temp[i].x / listGroup[i], temp[i].y / listGroup[i])
-            this.scoreBoard.addScore(scoreGot)
+            this.scoreBoard.emitterScoreEffect(
+                temp[i].x / listGroup[i],
+                temp[i].y / listGroup[i],
+                () => this.scoreBoard.addScore(scoreGot)
+            )
 
             const text = this.add
                 .text(temp[i].x / listGroup[i], temp[i].y / listGroup[i], scoreGot.toString(), {
                     fontFamily: 'Cambria',
-                    fontSize: 25,
-                    color: COLOR_LIST[idx],
+                    fontSize: 25 + ((scoreGot <= 10000 ? scoreGot : 10000) / 10000) * (40 - 25),
+                    color: color,
                 })
                 .setDepth(6)
                 .setOrigin(0.5, 0.5)
@@ -615,7 +713,7 @@ export class GamePlayScene extends Phaser.Scene {
 
                     image.updatePositon(true, undefined, undefined, 500, () => {
                         image.destroy()
-                        if (!tile.isSuperTile()) tile.setSuper()
+                        //if (!tile.isSuperTile()) tile.setSuper()
                         fallFlag--
                         if (fallFlag == 0) {
                             this.handleFall(
@@ -623,7 +721,7 @@ export class GamePlayScene extends Phaser.Scene {
                                 groupZeroBoom,
                                 listGroup,
                                 cols,
-                                combo,
+                                combo + 1,
                                 onComplete
                             )
                         }
@@ -702,7 +800,7 @@ export class GamePlayScene extends Phaser.Scene {
     }
 
     private handleIdleTime(): void {
-        if (this.idleTime > 10000) {
+        if (this.idleTime > IDLE_TIME) {
             if (this.firstSelectedTile) {
                 this.firstSelectedTile.unSelectEffect()
                 this.firstSelectedTile = null
@@ -824,18 +922,19 @@ export class GamePlayScene extends Phaser.Scene {
     private showHint(): void {
         const listTile = this.handleHint()
         if (listTile.length == 0) {
-            this.firstSelectedTile = this.getTile(0, 0) as Tile
-            this.secondSelectedTile = this.getTile(0, 1) as Tile
             this.shuffle()
             return
         }
         this.hintTile1 = listTile[0]
         this.hintTile2 = listTile[1]
         if (this.hintTile1 && this.hintTile2) {
-            this.hintTile1.showHint()
-            this.hintTile2.showHint() //test auto play
-            //this.onTileClicked(null, this.hintTile1)
-            //this.onTileClicked(null, this.hintTile2)
+            if (IS_AUTO_PLAY) {
+                this.onTileClicked(null, this.hintTile1)
+                this.onTileClicked(null, this.hintTile2)
+            } else {
+                this.hintTile1.showHint()
+                this.hintTile2.showHint()
+            }
         }
     }
 
@@ -855,8 +954,7 @@ export class GamePlayScene extends Phaser.Scene {
     }
 
     public shuffle(): void {
-        this.firstSelectedTile = this.getTile(0, 0) as Tile
-        this.secondSelectedTile = this.getTile(0, 1) as Tile
+        this.boardState = BOARD_STATE.HANDLING
         this.idleTime = 0
         const shape = this.getRandomShape()
 
@@ -884,8 +982,7 @@ export class GamePlayScene extends Phaser.Scene {
                                 () => {
                                     this.handleMatch(() => {
                                         this.idleTime = 0
-                                        this.firstSelectedTile = null
-                                        this.secondSelectedTile = null
+                                        this.resetSelect()
                                         this.boardState = BOARD_STATE.IDLE
                                     })
                                 },

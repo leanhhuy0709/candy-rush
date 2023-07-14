@@ -8,7 +8,7 @@ export const CONST = {
     margin: 10,
     candyTypes: [
         'cookie1',
-        /*//'cookie2',
+        //'cookie2',
         'croissant',
         //'cupcake',
         'donut',

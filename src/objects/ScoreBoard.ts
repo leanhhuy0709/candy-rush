@@ -135,7 +135,7 @@ export default class ScoreBoard {
         }
     }
 
-    public emitterScoreEffect(x: number, y: number): void {
+    public emitterScoreEffect(x: number, y: number, onComplete?: Function): void {
         const tempObj = this.scene.add.image(x, y, '').setVisible(false)
 
         const emitter = ParticleEmitterPool.getParticleEmitter(0, 0, 'flares', {
@@ -165,6 +165,8 @@ export default class ScoreBoard {
                 tempObj.destroy()
                 ParticleEmitterPool.removeParticleEmitter(emitter)
                 tween.destroy()
+
+                if (onComplete) onComplete()
             },
         })
     }

@@ -20,4 +20,10 @@ export const GameConfig: Phaser.Types.Core.GameConfig = {
     },
     backgroundColor: '#000000',
     render: { pixelArt: false, antialias: true },
+    fps: {
+        forceSetTimeOut: true,
+        panicMax: 0,
+        smoothStep: false,
+        target: 100,
+    },
 }
