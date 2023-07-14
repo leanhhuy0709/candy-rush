@@ -11,8 +11,8 @@ export enum BOARD_STATE {
 const COLOR_LIST = ['#ffffff', '#bcffe3', '#20b2aa', '#ffd966']
 
 const IS_DEBUG = false
-const IS_AUTO_PLAY = true
-const IDLE_TIME = 2000
+const IS_AUTO_PLAY = false
+const IDLE_TIME = 5000
 export class GamePlayScene extends Phaser.Scene {
     private tileMap: Map<string, Tile>
 
@@ -331,104 +331,7 @@ export class GamePlayScene extends Phaser.Scene {
                         }
 
                         if (isBoom) {
-                            if (currentTile.isSuperTile()) {
-                                for (let m = -1; m <= 1; m++) {
-                                    for (let n = -1; n <= 1; n++) {
-                                        if (
-                                            !group.has(this.convertToKey(i + m, j + n)) &&
-                                            this.getTile(i + m, j + n)
-                                        ) {
-                                            group.set(this.convertToKey(i + m, j + n), 0)
-                                            groupZeroBoom.push({ x: i + m, y: j + n })
-                                        }
-                                    }
-                                }
-
-                                //effect big 4
-                                this.scoreBoard.emitterScoreEffect(
-                                    currentTile.x,
-                                    currentTile.y,
-                                    () => this.scoreBoard.addScore(250 * (combo < 4 ? combo : 4))
-                                )
-
-                                const text = this.add
-                                    .text(
-                                        currentTile.x,
-                                        currentTile.y + 10,
-                                        (250 * (combo < 4 ? combo : 4)).toString(),
-                                        {
-                                            fontFamily: 'Cambria',
-                                            fontSize: 32,
-                                            color: COLOR_LIST[1],
-                                        }
-                                    )
-                                    .setDepth(6)
-                                    .setOrigin(0.5, 0.5)
-                                    .setAlpha(0)
-                                    .setStroke('#000000', 2)
-
-                                const tween = this.tweens.add({
-                                    targets: text,
-                                    alpha: 1,
-                                    duration: 700,
-                                    y: currentTile.y,
-                                    onComplete: () => {
-                                        text.destroy()
-                                        tween.destroy()
-                                    },
-                                })
-
-                                currentTile.setSuper(false)
-                            } else if (currentTile.isMegaTile()) {
-                                for (let m = 0; m <= CONST.gridWidth; m++) {
-                                    if (!group.has(this.convertToKey(m, j)) && this.getTile(m, j)) {
-                                        group.set(this.convertToKey(m, j), 0)
-                                        groupZeroBoom.push({ x: m, y: j })
-                                    }
-                                }
-                                for (let m = 0; m <= CONST.gridHeight; m++) {
-                                    if (!group.has(this.convertToKey(i, m)) && this.getTile(i, m)) {
-                                        group.set(this.convertToKey(i, m), 0)
-                                        groupZeroBoom.push({ x: i, y: m })
-                                    }
-                                }
-
-                                //effect big 5
-                                this.scoreBoard.emitterScoreEffect(
-                                    currentTile.x,
-                                    currentTile.y,
-                                    () => this.scoreBoard.addScore(600 * (combo < 4 ? combo : 4))
-                                )
-
-                                const text = this.add
-                                    .text(
-                                        currentTile.x,
-                                        currentTile.y + 10,
-                                        (600 * (combo < 4 ? combo : 4)).toString(),
-                                        {
-                                            fontFamily: 'Cambria',
-                                            fontSize: 32,
-                                            color: COLOR_LIST[1],
-                                        }
-                                    )
-                                    .setDepth(6)
-                                    .setOrigin(0.5, 0.5)
-                                    .setAlpha(0)
-                                    .setStroke('#000000', 2)
-
-                                const tween = this.tweens.add({
-                                    targets: text,
-                                    alpha: 1,
-                                    duration: 700,
-                                    y: currentTile.y,
-                                    onComplete: () => {
-                                        text.destroy()
-                                        tween.destroy()
-                                    },
-                                })
-
-                                currentTile.setMega(false)
-                            }
+                            this.addTileBoomBySuperMegaToGroup(currentTile, i, j, group, groupZeroBoom, combo)
                         }
                     }
                 }
@@ -447,38 +350,8 @@ export class GamePlayScene extends Phaser.Scene {
             if (tile) {
                 cols[obj.x]++
                 tile.boom()
-
                 listBoom.push({ x: obj.x, y: obj.y, newY: -cols[obj.x] })
-
-                if (tile.isSuperTile()) {
-                    for (let m = -1; m <= 1; m++) {
-                        for (let n = -1; n <= 1; n++) {
-                            if (
-                                !group.has(this.convertToKey(obj.x + m, obj.y + n)) &&
-                                this.getTile(obj.x + m, obj.y + n)
-                            ) {
-                                group.set(this.convertToKey(obj.x + m, obj.y + n), 0)
-                                groupZeroBoom.push({ x: obj.x + m, y: obj.y + n })
-                            }
-                        }
-                    }
-                    tile.setSuper(false)
-                } else if (tile.isMegaTile()) {
-                    for (let m = 0; m <= CONST.gridWidth; m++) {
-                        if (!group.has(this.convertToKey(m, obj.y)) && this.getTile(m, obj.y)) {
-                            group.set(this.convertToKey(m, obj.y), 0)
-                            groupZeroBoom.push({ x: m, y: obj.y })
-                        }
-                    }
-                    for (let m = 0; m <= CONST.gridHeight; m++) {
-                        if (!group.has(this.convertToKey(obj.x, m)) && this.getTile(obj.x, m)) {
-                            group.set(this.convertToKey(obj.x, m), 0)
-                            groupZeroBoom.push({ x: obj.x, y: m })
-                        }
-                    }
-
-                    tile.setMega(false)
-                }
+                this.addTileBoomBySuperMegaToGroup(tile, obj.x, obj.y, group, groupZeroBoom, combo)
             }
         }
 
@@ -775,6 +648,109 @@ export class GamePlayScene extends Phaser.Scene {
         } else {
             if (onComplete) onComplete(false)
             this.boardState = BOARD_STATE.IDLE
+        }
+    }
+
+    private addTileBoomBySuperMegaToGroup(
+        tile: Tile,
+        x: number,
+        y: number,
+        group: Map<string, number>,
+        groupZeroBoom: Array<{ x: number; y: number }>,
+        combo = 1
+    ): void {
+        if (tile.isSuperTile()) {
+            for (let m = -1; m <= 1; m++) {
+                for (let n = -1; n <= 1; n++) {
+                    if (!group.has(this.convertToKey(x + m, y + n)) && this.getTile(x + m, y + n)) {
+                        group.set(this.convertToKey(x + m, y + n), 0)
+                        groupZeroBoom.push({ x: x + m, y: y + n })
+                    }
+                }
+            }
+            //effect big 4
+            this.scoreBoard.emitterScoreEffect(
+                tile.x,
+                tile.y,
+                () => this.scoreBoard.addScore(250 * (combo < 4 ? combo : 4))
+            )
+
+            const text = this.add
+                .text(
+                    tile.x,
+                    tile.y + 10,
+                    (250 * (combo < 4 ? combo : 4)).toString(),
+                    {
+                        fontFamily: 'Cambria',
+                        fontSize: 32,
+                        color: COLOR_LIST[1],
+                    }
+                )
+                .setDepth(6)
+                .setOrigin(0.5, 0.5)
+                .setAlpha(0)
+                .setStroke('#000000', 2)
+
+            const tween = this.tweens.add({
+                targets: text,
+                alpha: 1,
+                duration: 700,
+                y: tile.y,
+                onComplete: () => {
+                    text.destroy()
+                    tween.destroy()
+                },
+            })
+            tile.setSuper(false)
+        } else if (tile.isMegaTile()) {
+            for (let m = 0; m <= CONST.gridWidth; m++) {
+                if (!group.has(this.convertToKey(m, y)) && this.getTile(m, y)) {
+                    group.set(this.convertToKey(m, y), 0)
+                    groupZeroBoom.push({ x: m, y: y })
+                }
+            }
+            for (let m = 0; m <= CONST.gridHeight; m++) {
+                if (!group.has(this.convertToKey(x, m)) && this.getTile(x, m)) {
+                    group.set(this.convertToKey(x, m), 0)
+                    groupZeroBoom.push({ x: x, y: m })
+                }
+            }
+
+            //effect big 5
+            this.scoreBoard.emitterScoreEffect(
+                tile.x,
+                tile.y,
+                () => this.scoreBoard.addScore(800 * (combo < 4 ? combo : 4))
+            )
+
+            const text = this.add
+                .text(
+                    tile.x,
+                    tile.y + 10,
+                    (800 * (combo < 4 ? combo : 4)).toString(),
+                    {
+                        fontFamily: 'Cambria',
+                        fontSize: 32,
+                        color: COLOR_LIST[1],
+                    }
+                )
+                .setDepth(6)
+                .setOrigin(0.5, 0.5)
+                .setAlpha(0)
+                .setStroke('#000000', 2)
+
+            const tween = this.tweens.add({
+                targets: text,
+                alpha: 1,
+                duration: 700,
+                y: tile.y,
+                onComplete: () => {
+                    text.destroy()
+                    tween.destroy()
+                },
+            })
+
+            tile.setMega(false)
         }
     }
 
