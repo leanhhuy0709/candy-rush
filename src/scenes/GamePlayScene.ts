@@ -15,7 +15,7 @@ export enum BOARD_STATE {
 
 const IS_DEBUG = false
 const IS_AUTO_PLAY = true
-const IDLE_TIME = 2000
+const IDLE_TIME = 1000
 export class GamePlayScene extends Phaser.Scene {
     public tileManager: TileManager
 
@@ -72,7 +72,7 @@ export class GamePlayScene extends Phaser.Scene {
                 this.resetSelect()
                 break
         }
-        console.log(this.boardState)
+        //console.log(this.boardState)
     }
 
     private onTileClicked(pointer: Phaser.Input.Pointer | null, gameObject: Tile) {
@@ -389,14 +389,11 @@ export class GamePlayScene extends Phaser.Scene {
         }
     }
 
-    private convertToKey(i: number, j: number): string {
-        return i.toString() + j.toString()
-    }
-
     public shuffle(): void {
         this.boardState = BOARD_STATE.HANDLING
         this.idleTime = 0
         const shape = this.getRandomShape()
+        this.tileManager.shuffleCandyList()
 
         for (let i = 0; i < CONST.gridHeight; i++) {
             for (let j = 0; j < CONST.gridWidth; j++) {

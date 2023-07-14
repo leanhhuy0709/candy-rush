@@ -4,7 +4,7 @@ import ParticleEmitterPool from './ParticleEmitterPool'
 import { Tile } from './Tile'
 
 const COLOR_LIST = ['#ffffff', '#bcffe3', '#20b2aa', '#ffd966']
-const SIMILAR_CANDY_CHANCE = 0.5
+const SIMILAR_CANDY_CHANCE = 0
 
 export default class TileManager {
     private scene: GamePlayScene
@@ -18,7 +18,7 @@ export default class TileManager {
 
         this.tileMap = new Map<string, Tile>()
 
-        this.numCandy = 5
+        this.numCandy = 1
         for (let i = 0; i < this.numCandy; i++) {
             this.candyList.push(CONST.candyTypes[i])
         }
@@ -101,12 +101,13 @@ export default class TileManager {
         } else console.log('Error swap!')
     }
 
-    public convertTupleNumberToStringKey(i: number, j: number): string {
+    public convertToKey(i: number, j: number): string {
+        /*convert tuple number to string key*/
         return i.toString() + j.toString()
     }
 
     public handleMatch(onComplete?: Function, combo = 1): void {
-        const directions = [
+        const directs = [
             { x: 0, y: 1 },
             { x: 0, y: -1 },
             { x: 1, y: 0 },
@@ -131,135 +132,122 @@ export default class TileManager {
             for (let j = 0; j < CONST.gridWidth; j++) {
                 const currentTile = this.getTile(i, j) as Tile
                 if (!currentTile) console.log('Error index tile!')
-                const g1 = group.get(this.convertTupleNumberToStringKey(i, j))
-                let k = 0
+                let g1 = group.get(this.convertToKey(i, j))
+
                 let isBoom = false
-                for (; k < directions.length; k++) {
-                    const tile = this.getTile(i + directions[k].x, j + directions[k].y)
+                //find group for g1
+                if (g1 == undefined) {
+                    for (let k = 0; k < directs.length; k++) {
+                        const tile = this.getTile(i + directs[k].x, j + directs[k].y)
+                        const tileBehind = this.getTile(i - directs[k].x, j - directs[k].y)
+                        const tileNext2 = this.getTile(i + 2 * directs[k].x, j + 2 * directs[k].y)
 
-                    if (tile && tile.getKey() === currentTile.getKey()) {
-                        const g2 = group.get(
-                            this.convertTupleNumberToStringKey(
-                                i + directions[k].x,
-                                j + directions[k].y
+                        const isTileSame = tile && tile.getKey() === currentTile.getKey()
+                        const isTileBehindSame =
+                            tileBehind && tileBehind.getKey() === currentTile.getKey()
+                        const isTileNext2Same =
+                            tileNext2 && tileNext2.getKey() === currentTile.getKey()
+
+                        if (!isTileSame) continue
+                        if (isTileBehindSame) {
+                            const gTemp = group.get(
+                                this.convertToKey(i - directs[k].x, j - directs[k].y)
                             )
-                        )
-                        //-1 x x 2
-                        const tileBehind = this.getTile(i - directions[k].x, j - directions[k].y)
-                        const tileNext2 = this.getTile(
-                            i + 2 * directions[k].x,
-                            j + 2 * directions[k].y
-                        )
-                        let key = undefined
-
-                        if (g1) key = g1
-                        if (g2) key = g2
-
-                        const isBehind = tileBehind && tileBehind.getKey() === currentTile.getKey()
-                        const isNext2 = tileNext2 && tileNext2.getKey() === currentTile.getKey()
-
-                        if (isBehind || isNext2) {
-                            if (!isBoom) {
-                                cols[currentTile.gridX]++
-                                currentTile.boom()
-                                listBoom.push({ x: i, y: j, newY: -cols[currentTile.gridX] })
+                            if (gTemp) {
+                                g1 = gTemp
+                                break
                             }
-
-                            if (isBehind) {
-                                const g3 = group.get(
-                                    this.convertTupleNumberToStringKey(
-                                        i - directions[k].x,
-                                        j - directions[k].y
-                                    )
-                                )
-                                if (g3) key = g3
-                            }
-
-                            if (isNext2) {
-                                const g3 = group.get(
-                                    this.convertTupleNumberToStringKey(
-                                        i + 2 * directions[k].x,
-                                        j + 2 * directions[k].y
-                                    )
-                                )
-
-                                if (g3) key = g3
-                            }
-
-                            if (key == undefined) {
-                                key = groupIndex
-                                listGroup.push(0)
-                                groupIndex++
-                            }
-
-                            if (g1 != key) {
-                                group.set(this.convertTupleNumberToStringKey(i, j), key)
-                                listGroup[key]++
-                            }
-                            if (g2 != key) {
-                                group.set(
-                                    this.convertTupleNumberToStringKey(
-                                        i + directions[k].x,
-                                        j + directions[k].y
-                                    ),
-                                    key
-                                )
-                                listGroup[key]++
-                            }
-
-                            if (isBehind) {
-                                const g3 = group.get(
-                                    this.convertTupleNumberToStringKey(
-                                        i - directions[k].x,
-                                        j - directions[k].y
-                                    )
-                                )
-
-                                if (g3 != key) {
-                                    group.set(
-                                        this.convertTupleNumberToStringKey(
-                                            i - directions[k].x,
-                                            j - directions[k].y
-                                        ),
-                                        key
-                                    )
-                                    listGroup[key]++
-                                }
-                            }
-                            if (isNext2) {
-                                const g3 = group.get(
-                                    this.convertTupleNumberToStringKey(
-                                        i + 2 * directions[k].x,
-                                        j + 2 * directions[k].y
-                                    )
-                                )
-
-                                if (g3 != key) {
-                                    group.set(
-                                        this.convertTupleNumberToStringKey(
-                                            i + 2 * directions[k].x,
-                                            j + 2 * directions[k].y
-                                        ),
-                                        key
-                                    )
-                                    listGroup[key]++
-                                }
-                            }
-
-                            isBoom = true
                         }
-
-                        if (isBoom) {
-                            this.addTileBoomBySuperMegaToGroup(
-                                currentTile,
-                                i,
-                                j,
-                                group,
-                                groupZeroBoom,
-                                combo
+                        if (isTileNext2Same) {
+                            const gTemp = group.get(
+                                this.convertToKey(i + 2 * directs[k].x, j + 2 * directs[k].y)
                             )
+                            if (gTemp) {
+                                g1 = gTemp
+                                break
+                            }
                         }
                     }
+                    if (g1) group.set(this.convertToKey(i, j), g1)
+                }
+
+                for (let k = 0; k < directs.length; k++) {
+                    const tile = this.getTile(i + directs[k].x, j + directs[k].y)
+                    const tileBehind = this.getTile(i - directs[k].x, j - directs[k].y)
+                    const tileNext2 = this.getTile(i + 2 * directs[k].x, j + 2 * directs[k].y)
+
+                    const isTileSame = tile && tile.getKey() === currentTile.getKey()
+                    const isTileBehindSame =
+                        tileBehind && tileBehind.getKey() === currentTile.getKey()
+                    const isTileNext2Same = tileNext2 && tileNext2.getKey() === currentTile.getKey()
+
+                    if (!isTileSame) continue
+                    let g2 = group.get(this.convertToKey(i + directs[k].x, j + directs[k].y))
+
+                    //-1 x x 2
+
+                    let key = undefined
+
+                    if (g1) key = g1
+                    if (g2) key = g2
+
+                    if (!isTileBehindSame && !isTileNext2Same) continue
+                    if (!isBoom) {
+                        cols[currentTile.gridX]++
+                        currentTile.boom()
+                        listBoom.push({ x: i, y: j, newY: -cols[currentTile.gridX] })
+                    }
+
+                    if (key == undefined) {
+                        key = groupIndex
+                        listGroup.push(0)
+                        groupIndex++
+                    }
+
+                    if (g1 != key) {
+                        g1 = key
+                        group.set(this.convertToKey(i, j), key)
+                        listGroup[key]++
+                    }
+                    if (g2 != key) {
+                        g2 = key
+                        group.set(this.convertToKey(i + directs[k].x, j + directs[k].y), key)
+                        listGroup[key]++
+                    }
+
+                    if (isTileBehindSame) {
+                        const g3 = group.get(this.convertToKey(i - directs[k].x, j - directs[k].y))
+
+                        if (g3 != key) {
+                            group.set(this.convertToKey(i - directs[k].x, j - directs[k].y), key)
+                            listGroup[key]++
+                        }
+                    }
+
+                    if (isTileNext2Same) {
+                        const g3 = group.get(
+                            this.convertToKey(i + 2 * directs[k].x, j + 2 * directs[k].y)
+                        )
+
+                        if (g3 != key) {
+                            group.set(
+                                this.convertToKey(i + 2 * directs[k].x, j + 2 * directs[k].y),
+                                key
+                            )
+                            listGroup[key]++
+                        }
+                    }
+
+                    isBoom = true
+
+                    this.addTileBoomBySuperMegaToGroup(
+                        currentTile,
+                        i,
+                        j,
+                        group,
+                        groupZeroBoom,
+                        combo
+                    )
                 }
             }
         }
@@ -267,7 +255,7 @@ export default class TileManager {
         //Boom all tile boom by super, mega - Wrost case O(n^2)
         while (groupZeroBoom.length > 0) {
             const obj = groupZeroBoom.pop() as { x: number; y: number }
-            const g = group.get(this.convertTupleNumberToStringKey(obj.x, obj.y))
+            const g = group.get(this.convertToKey(obj.x, obj.y))
 
             if (g != 0) continue
 
@@ -294,9 +282,7 @@ export default class TileManager {
             const tile = this.getTile(data.x, data.y)
 
             if (tile) {
-                const groupID = group.get(
-                    this.convertTupleNumberToStringKey(data.x, data.y)
-                ) as number
+                const groupID = group.get(this.convertToKey(data.x, data.y)) as number
                 if (groupID) {
                     temp[groupID].x += tile.x
                     temp[groupID].y += tile.y + 10
@@ -386,8 +372,8 @@ export default class TileManager {
 
             //handle location of super/mega tile in match >= 4
 
-            let gridX = -1
-            let gridY = -1
+            let gridX = -2
+            let gridY = -2
 
             const checkMapX = new Map<number, number>()
             const checkMapY = new Map<number, number>()
@@ -446,7 +432,7 @@ export default class TileManager {
                     queueMatch4Tween.push({ groupIdx: i, tile: tile })
                     if (listGroup[i] == 4) tile.setSuper()
                     else tile.setMega()
-                } else console.log('Error Tile!', cols)
+                } else console.log('Error Tile!', gridX, listGroup)
             }
 
             const gamePlayScene = this.scene as GamePlayScene
@@ -480,7 +466,6 @@ export default class TileManager {
             })
         }
 
-
         this.scene.boardState = BOARD_STATE.MERGING
         //Before handle Fall, hide all tile have grid -1 - O(n^2)
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -491,10 +476,9 @@ export default class TileManager {
         let fallFlag = 0
         for (let i = 0; i < queueMatch4Tween.length; i++)
             fallFlag += listTileFromGroup[queueMatch4Tween[i].groupIdx].length
-        if (fallFlag == 0){
+        if (fallFlag == 0) {
             this.handleFall(listBoom, groupZeroBoom, listGroup, cols, combo, onComplete)
-        }
-        else {
+        } else {
             //Handle tween merge - Wrost case O(n^2/4)
             for (let i = 0; i < queueMatch4Tween.length; i++) {
                 const tile = queueMatch4Tween[i].tile
@@ -593,11 +577,8 @@ export default class TileManager {
         if (tile.isSuperTile()) {
             for (let m = -1; m <= 1; m++) {
                 for (let n = -1; n <= 1; n++) {
-                    if (
-                        !group.has(this.convertTupleNumberToStringKey(x + m, y + n)) &&
-                        this.getTile(x + m, y + n)
-                    ) {
-                        group.set(this.convertTupleNumberToStringKey(x + m, y + n), 0)
+                    if (!group.has(this.convertToKey(x + m, y + n)) && this.getTile(x + m, y + n)) {
+                        group.set(this.convertToKey(x + m, y + n), 0)
                         groupZeroBoom.push({ x: x + m, y: y + n })
                     }
                 }
@@ -631,14 +612,14 @@ export default class TileManager {
             tile.setSuper(false)
         } else if (tile.isMegaTile()) {
             for (let m = 0; m <= CONST.gridWidth; m++) {
-                if (!group.has(this.convertTupleNumberToStringKey(m, y)) && this.getTile(m, y)) {
-                    group.set(this.convertTupleNumberToStringKey(m, y), 0)
+                if (!group.has(this.convertToKey(m, y)) && this.getTile(m, y)) {
+                    group.set(this.convertToKey(m, y), 0)
                     groupZeroBoom.push({ x: m, y: y })
                 }
             }
             for (let m = 0; m <= CONST.gridHeight; m++) {
-                if (!group.has(this.convertTupleNumberToStringKey(x, m)) && this.getTile(x, m)) {
-                    group.set(this.convertTupleNumberToStringKey(x, m), 0)
+                if (!group.has(this.convertToKey(x, m)) && this.getTile(x, m)) {
+                    group.set(this.convertToKey(x, m), 0)
                     groupZeroBoom.push({ x: x, y: m })
                 }
             }
