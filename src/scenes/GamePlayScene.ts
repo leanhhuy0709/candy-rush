@@ -11,8 +11,8 @@ export enum BOARD_STATE {
 const COLOR_LIST = ['#ffffff', '#bcffe3', '#20b2aa', '#ffd966']
 
 const IS_DEBUG = false
-const IS_AUTO_PLAY = false
-const IDLE_TIME = 5000
+const IS_AUTO_PLAY = true
+const IDLE_TIME = 2000
 export class GamePlayScene extends Phaser.Scene {
     private tileMap: Map<string, Tile>
 
@@ -219,13 +219,12 @@ export class GamePlayScene extends Phaser.Scene {
 
         const groupZeroBoom: Array<{ x: number; y: number }> = []
 
-        //traverse all tile, check tile boom
+        //traverse all tile, check tile boom - O(n^2)
         for (let i = 0; i < CONST.gridHeight; i++) {
             for (let j = 0; j < CONST.gridWidth; j++) {
                 const currentTile = this.getTile(i, j) as Tile
                 if (!currentTile) console.log('Error index tile!', this.tileMap)
                 const g1 = group.get(this.convertToKey(i, j))
-
                 let k = 0
                 let isBoom = false
                 for (; k < directions.length; k++) {
@@ -246,98 +245,104 @@ export class GamePlayScene extends Phaser.Scene {
                         if (g1) key = g1
                         if (g2) key = g2
 
-                        if (tileBehind && tileBehind.getKey() === currentTile.getKey()) {
+                        const isBehind = tileBehind && tileBehind.getKey() === currentTile.getKey()
+                        const isNext2 = tileNext2 && tileNext2.getKey() === currentTile.getKey()
+
+                        if (isBehind || isNext2) {
                             if (!isBoom) {
                                 cols[currentTile.gridX]++
                                 currentTile.boom()
                                 listBoom.push({ x: i, y: j, newY: -cols[currentTile.gridX] })
                             }
 
-                            const g3 = group.get(
-                                this.convertToKey(i - directions[k].x, j - directions[k].y)
-                            )
-
-                            if (g3) key = g3
-
-                            if (key == undefined) {
-                                key = groupIndex
-                                listGroup.push(0)
-                                groupIndex++
-                            }
-
-                            if (g1 != key) {
-                                group.set(this.convertToKey(i, j), key)
-                                listGroup[key]++
-                            }
-                            if (g2 != key) {
-                                group.set(
-                                    this.convertToKey(i + directions[k].x, j + directions[k].y),
-                                    key
+                            if (isBehind) {
+                                const g3 = group.get(
+                                    this.convertToKey(i - directions[k].x, j - directions[k].y)
                                 )
-                                listGroup[key]++
-                            }
-                            if (g3 != key) {
-                                group.set(
-                                    this.convertToKey(i - directions[k].x, j - directions[k].y),
-                                    key
-                                )
-                                listGroup[key]++
+                                if (g3) key = g3
                             }
 
-                            isBoom = true
-                        }
-
-                        if (!isBoom && tileNext2 && tileNext2.getKey() === currentTile.getKey()) {
-                            if (!isBoom) {
-                                cols[currentTile.gridX]++
-                                currentTile.boom()
-                                listBoom.push({ x: i, y: j, newY: -cols[currentTile.gridX] })
-                            }
-                            const g3 = group.get(
-                                this.convertToKey(i + 2 * directions[k].x, j + 2 * directions[k].y)
-                            )
-
-                            if (g3) key = g3
-
-                            if (key == undefined) {
-                                key = groupIndex
-                                listGroup.push(0)
-                                groupIndex++
-                            }
-
-                            if (g1 != key) {
-                                group.set(this.convertToKey(i, j), key)
-                                listGroup[key]++
-                            }
-                            if (g2 != key) {
-                                group.set(
-                                    this.convertToKey(i + directions[k].x, j + directions[k].y),
-                                    key
-                                )
-                                listGroup[key]++
-                            }
-                            if (g3 != key) {
-                                group.set(
+                            if (isNext2) {
+                                const g3 = group.get(
                                     this.convertToKey(
                                         i + 2 * directions[k].x,
                                         j + 2 * directions[k].y
-                                    ),
+                                    )
+                                )
+
+                                if (g3) key = g3
+                            }
+
+                            if (key == undefined) {
+                                key = groupIndex
+                                listGroup.push(0)
+                                groupIndex++
+                            }
+
+                            if (g1 != key) {
+                                group.set(this.convertToKey(i, j), key)
+                                listGroup[key]++
+                            }
+                            if (g2 != key) {
+                                group.set(
+                                    this.convertToKey(i + directions[k].x, j + directions[k].y),
                                     key
                                 )
                                 listGroup[key]++
+                            }
+
+                            if (isBehind) {
+                                const g3 = group.get(
+                                    this.convertToKey(i - directions[k].x, j - directions[k].y)
+                                )
+
+                                if (g3 != key) {
+                                    group.set(
+                                        this.convertToKey(i - directions[k].x, j - directions[k].y),
+                                        key
+                                    )
+                                    listGroup[key]++
+                                }
+                            }
+                            if (isNext2) {
+                                const g3 = group.get(
+                                    this.convertToKey(
+                                        i + 2 * directions[k].x,
+                                        j + 2 * directions[k].y
+                                    )
+                                )
+
+                                if (g3 != key) {
+                                    group.set(
+                                        this.convertToKey(
+                                            i + 2 * directions[k].x,
+                                            j + 2 * directions[k].y
+                                        ),
+                                        key
+                                    )
+                                    listGroup[key]++
+                                }
                             }
 
                             isBoom = true
                         }
 
                         if (isBoom) {
-                            this.addTileBoomBySuperMegaToGroup(currentTile, i, j, group, groupZeroBoom, combo)
+                            this.addTileBoomBySuperMegaToGroup(
+                                currentTile,
+                                i,
+                                j,
+                                group,
+                                groupZeroBoom,
+                                combo
+                            )
                         }
                     }
                 }
             }
         }
 
+        //Boom all tile boom by super, mega - Wrost case O(n^2)
         while (groupZeroBoom.length > 0) {
             const obj = groupZeroBoom.pop() as { x: number; y: number }
             const g = group.get(this.convertToKey(obj.x, obj.y))
@@ -355,13 +360,13 @@ export class GamePlayScene extends Phaser.Scene {
             }
         }
 
-        //traverse tileBoom to remove Tile and group tile to listTileFromGroup
+        //traverse tileBoom to remove Tile and group tile to listTileFromGroup - O(n)
         const temp = []
-        for (let i = 0; i < listGroup.length; i++) temp.push({ x: 0, y: 0, gridX: 0, gridY: 0 })
+        for (let i = 0; i < listGroup.length; i++) temp.push({ x: 0, y: 0})
 
         const listTileFromGroup: Array<Array<{ x: number; y: number; tile: Tile }>> = []
         for (let i = 0; i < listGroup.length; i++) listTileFromGroup.push([])
-
+        //Wrost case O(n^2)
         for (let i = 0; i < listBoom.length; i++) {
             const data = listBoom[i]
             const tile = this.getTile(data.x, data.y)
@@ -371,8 +376,6 @@ export class GamePlayScene extends Phaser.Scene {
                 if (groupID) {
                     temp[groupID].x += tile.x
                     temp[groupID].y += tile.y + 10
-                    temp[groupID].gridX = tile.gridX
-                    temp[groupID].gridY = tile.gridY
                     listTileFromGroup[groupID].push({ x: tile.gridX, y: tile.gridY, tile: tile })
                 }
                 this.removeTile(data.x, data.y)
@@ -383,6 +386,7 @@ export class GamePlayScene extends Phaser.Scene {
             }
         }
 
+        //Handle Big Boom when to more particle
         if (Tile.boomFlag > 10) {
             const emitter = ParticleEmitterPool.getParticleEmitter(
                 this.cameras.main.width / 2,
@@ -410,7 +414,7 @@ export class GamePlayScene extends Phaser.Scene {
         const queueMatch4Tween = []
 
         let color = ''
-        //calculate score, handle match 4, match 5
+        //calculate score, handle match 4, match 5 - Wrost case O(n^2/3)
         for (let i = 1; i < listGroup.length; i++) {
             let scoreGot = 0
             switch (listGroup[i]) {
@@ -550,20 +554,19 @@ export class GamePlayScene extends Phaser.Scene {
             })
         }
 
-        //Before handle Fall, hide all tile have grid -1
+        //Before handle Fall, hide all tile have grid -1 - O(n^2)
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         for (const [_key, value] of this.tileMap) {
             if (value.gridY < 0) value.setVisible(false)
         }
 
         let fallFlag = 0
-
         for (let i = 0; i < queueMatch4Tween.length; i++)
             fallFlag += listTileFromGroup[queueMatch4Tween[i].groupIdx].length
-
         if (fallFlag == 0)
             this.handleFall(listBoom, groupZeroBoom, listGroup, cols, combo, onComplete)
         else {
+            //Handle tween merge - Wrost case O(n^2/4)
             for (let i = 0; i < queueMatch4Tween.length; i++) {
                 const tile = queueMatch4Tween[i].tile
                 const groupIdx = queueMatch4Tween[i].groupIdx
@@ -600,9 +603,8 @@ export class GamePlayScene extends Phaser.Scene {
                         }
                     })
                 }
-            } //
+            }
         }
-        //this.handleFall(listBoom, groupZeroBoom, listGroup, cols, combo, onComplete)
     }
 
     private handleFall(
@@ -615,6 +617,7 @@ export class GamePlayScene extends Phaser.Scene {
     ): void {
         //handle fall tile
         if (listBoom.length) {
+            // Average: O(n) - Wrost Case: O(n^2)
             for (let i = 0; i < CONST.gridWidth; i++) {
                 let num = 0
                 for (let j = CONST.gridHeight - 1; j >= -cols[i]; j--) {
@@ -669,23 +672,16 @@ export class GamePlayScene extends Phaser.Scene {
                 }
             }
             //effect big 4
-            this.scoreBoard.emitterScoreEffect(
-                tile.x,
-                tile.y,
-                () => this.scoreBoard.addScore(250 * (combo < 4 ? combo : 4))
+            this.scoreBoard.emitterScoreEffect(tile.x, tile.y, () =>
+                this.scoreBoard.addScore(250 * (combo < 4 ? combo : 4))
             )
 
             const text = this.add
-                .text(
-                    tile.x,
-                    tile.y + 10,
-                    (250 * (combo < 4 ? combo : 4)).toString(),
-                    {
-                        fontFamily: 'Cambria',
-                        fontSize: 32,
-                        color: COLOR_LIST[1],
-                    }
-                )
+                .text(tile.x, tile.y + 10, (250 * (combo < 4 ? combo : 4)).toString(), {
+                    fontFamily: 'Cambria',
+                    fontSize: 32,
+                    color: COLOR_LIST[1],
+                })
                 .setDepth(6)
                 .setOrigin(0.5, 0.5)
                 .setAlpha(0)
@@ -717,23 +713,16 @@ export class GamePlayScene extends Phaser.Scene {
             }
 
             //effect big 5
-            this.scoreBoard.emitterScoreEffect(
-                tile.x,
-                tile.y,
-                () => this.scoreBoard.addScore(800 * (combo < 4 ? combo : 4))
+            this.scoreBoard.emitterScoreEffect(tile.x, tile.y, () =>
+                this.scoreBoard.addScore(800 * (combo < 4 ? combo : 4))
             )
 
             const text = this.add
-                .text(
-                    tile.x,
-                    tile.y + 10,
-                    (800 * (combo < 4 ? combo : 4)).toString(),
-                    {
-                        fontFamily: 'Cambria',
-                        fontSize: 32,
-                        color: COLOR_LIST[1],
-                    }
-                )
+                .text(tile.x, tile.y + 10, (800 * (combo < 4 ? combo : 4)).toString(), {
+                    fontFamily: 'Cambria',
+                    fontSize: 32,
+                    color: COLOR_LIST[1],
+                })
                 .setDepth(6)
                 .setOrigin(0.5, 0.5)
                 .setAlpha(0)
