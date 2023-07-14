@@ -1,4 +1,4 @@
-import { SCENE } from '../const/const'
+import { CONST, SCENE } from '../const/const'
 
 export default class MenuScene extends Phaser.Scene {
     constructor() {
@@ -7,8 +7,22 @@ export default class MenuScene extends Phaser.Scene {
         })
     }
 
+    preload() {
+        this.load.atlas(
+            'confetti',
+            'assets\\confeti\\confetti.png',
+            'assets\\confeti\\confetti.json'
+        )
+    }
+
     public create(): void {
         this.add.image(0, 0, 'bg').setOrigin(0, 0)
+
+        this.add.image(470, 200, CONST.candyTypes[0])
+        this.add.image(440, 210, CONST.candyTypes[1])
+        this.add.image(430, 180, CONST.candyTypes[4])
+        this.add.image(180, 170, CONST.candyTypes[3])
+        this.add.image(300, 220, CONST.candyTypes[2])
 
         this.add
             .text(this.cameras.main.width / 2, 200, 'CANDY CRUSH', {
@@ -17,7 +31,7 @@ export default class MenuScene extends Phaser.Scene {
                 color: '#ffffff',
                 fontStyle: 'bold',
                 stroke: '#000000',
-                strokeThickness: 2,
+                strokeThickness: 4,
             })
             .setDepth(4)
             .setOrigin(0.5, 0.5)

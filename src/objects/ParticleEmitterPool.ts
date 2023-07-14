@@ -12,15 +12,16 @@ export default class ParticleEmitterPool {
         textures: string,
         config: Phaser.Types.GameObjects.Particles.ParticleEmitterConfig
     ): Phaser.GameObjects.Particles.ParticleEmitter {
+
         return this.scene.add.particles(x, y, textures, config)
         /*
+        
         if (ParticleEmitterPool.particleEmitterList.length > 0) {
             const emitter =
                 ParticleEmitterPool.particleEmitterList.pop() as Phaser.GameObjects.Particles.ParticleEmitter
             emitter.x = x
             emitter.y = y
-            emitter.setTexture(textures).setConfig(config).setVisible(true).setActive(true)
-            emitter.start(0, 500)
+            emitter.setTexture(textures).setConfig(config).setVisible(true)
             return emitter
         }
 
@@ -32,6 +33,7 @@ export default class ParticleEmitterPool {
     ): void {
         emitter.destroy()
         /*
+        
         emitter.setVisible(false)
         emitter.setActive(false)
         ParticleEmitterPool.particleEmitterList.push(emitter)*/

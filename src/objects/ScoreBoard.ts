@@ -6,6 +6,39 @@ const progressBarY = 50
 const progressBarWidth = 175
 const progressBarHeight = 20
 
+class ConfettiParticle extends Phaser.GameObjects.Particles.Particle {
+    public startX: number
+    public startY: number
+    public endX: number
+    public endY: number
+    public isInit = false
+
+    constructor(emitter: Phaser.GameObjects.Particles.ParticleEmitter) {
+        super(emitter)
+    }
+
+    public update(
+        delta: number,
+        step: number,
+        processors: Phaser.GameObjects.Particles.ParticleProcessor[]
+    ): boolean {
+        const x = this.x,
+            y = this.y
+
+        const val = super.update(delta, step, processors)
+
+        const ease = this.lifeCurrent / this.life
+        const ease2 = Phaser.Math.Easing.Quartic.In(ease)
+
+        this.x = x + ((delta * this.velocityX) / 1000) * ease2
+        this.y = y + ((delta * this.velocityY) / 1000) * ease2
+
+        this.angle += delta/1000 * 20
+
+        return val
+    }
+}
+
 export default class ScoreBoard {
     private scene: Phaser.Scene
 
@@ -20,6 +53,8 @@ export default class ScoreBoard {
 
     private level = 1
     private levels: number[] = []
+
+    private confettiEmitter: Phaser.GameObjects.Particles.ParticleEmitter
 
     public constructor(scene: Phaser.Scene) {
         this.scene = scene
@@ -41,7 +76,11 @@ export default class ScoreBoard {
             this.levels.push(((i * (i + 1)) / 2) * 500)
         }
 
-        this.progressBarEmitter = ParticleEmitterPool.getParticleEmitter(progressBarX, progressBarY + progressBarHeight / 2, 'flares', {
+        this.progressBarEmitter = ParticleEmitterPool.getParticleEmitter(
+            progressBarX,
+            progressBarY + progressBarHeight / 2,
+            'flares',
+            {
                 frame: 'white',
                 color: [0x96e0da, 0x937ef3],
                 colorEase: 'quad.out',
@@ -51,8 +90,8 @@ export default class ScoreBoard {
                 speed: 100,
                 advance: 2000,
                 blendMode: 'ADD',
-            })
-            .setDepth(6)
+            }
+        ).setDepth(6).start(undefined, -1)
 
         this.scene.add
             .graphics()
@@ -86,6 +125,19 @@ export default class ScoreBoard {
             )
             .setDepth(6)
             .setOrigin(0.5, 0.5)
+
+        this.confettiEmitter = this.scene.add.particles(0, 300, 'confetti', {
+            frame: ['1', '2', '3', '4', '5'],
+            lifespan: 3500,
+            scale: { start: 0.3, end: 0.5 },
+            alpha: { start: 75, end: 100 },
+            angle: { min: -180, max: 180 },
+            speedX: { min: 300, max: 800 }, 
+            speedY: { min: -1000, max: -500 }, 
+            gravityY: 1800,
+            quantity: 1,
+            particleClass: ConfettiParticle,
+        }).setDepth(7).stop()
     }
 
     public addScore(score: number): void {
@@ -132,6 +184,8 @@ export default class ScoreBoard {
             )
             const scene = this.scene as GamePlayScene
             scene.shuffle()
+
+            this.confettiEmitter.start(undefined, 1000)
         }
     }
 
@@ -147,7 +201,7 @@ export default class ScoreBoard {
             lifespan: 1000,
             quantity: 1,
             scale: { start: 0.3, end: 0.1 },
-        }).setDepth(6)
+        }).setDepth(6).start(undefined, 1000)
 
         let percent =
             (this.score - this.levels[this.level - 1]) /

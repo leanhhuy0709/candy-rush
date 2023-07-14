@@ -4,7 +4,7 @@ import ParticleEmitterPool from './ParticleEmitterPool'
 import { Tile } from './Tile'
 
 const COLOR_LIST = ['#ffffff', '#bcffe3', '#20b2aa', '#ffd966']
-const SIMILAR_CANDY_CHANCE = 0
+const SIMILAR_CANDY_CHANCE = 0.3
 
 export default class TileManager {
     private scene: GamePlayScene
@@ -57,10 +57,11 @@ export default class TileManager {
     }
 
     public shuffleCandyList(): void {
+        /*
         const randList = []
         for (let i = 0; i < CONST.candyTypes.length; i++) randList.push(i)
         randList.sort(() => Math.random() - 0.5)
-        for (let i = 0; i < this.numCandy; i++) this.candyList[i] = CONST.candyTypes[randList[i]]
+        for (let i = 0; i < this.numCandy; i++) this.candyList[i] = CONST.candyTypes[randList[i]]*/
     }
 
     public getRandomCandyKey(x?: number, y?: number): string {
@@ -107,150 +108,14 @@ export default class TileManager {
     }
 
     public handleMatch(onComplete?: Function, combo = 1): void {
-        const directs = [
-            { x: 0, y: 1 },
-            { x: 0, y: -1 },
-            { x: 1, y: 0 },
-            { x: -1, y: 0 },
-        ]
-
         Tile.boomFlag = 0
 
-        const cols: number[] = []
-        for (let i = 0; i < CONST.gridWidth; i++) cols.push(0)
-
-        const listBoom: Array<{ x: number; y: number; newY: number }> = []
-
-        const group = new Map<string, number>()
-        let groupIndex = 1
-        const listGroup = [0]
-
-        const groupZeroBoom: Array<{ x: number; y: number }> = []
-
-        //traverse all tile, check tile boom - O(n^2)
-        for (let i = 0; i < CONST.gridHeight; i++) {
-            for (let j = 0; j < CONST.gridWidth; j++) {
-                const currentTile = this.getTile(i, j) as Tile
-                if (!currentTile) console.log('Error index tile!')
-                let g1 = group.get(this.convertToKey(i, j))
-
-                let isBoom = false
-                //find group for g1
-                if (g1 == undefined) {
-                    for (let k = 0; k < directs.length; k++) {
-                        const tile = this.getTile(i + directs[k].x, j + directs[k].y)
-                        const tileBehind = this.getTile(i - directs[k].x, j - directs[k].y)
-                        const tileNext2 = this.getTile(i + 2 * directs[k].x, j + 2 * directs[k].y)
-
-                        const isTileSame = tile && tile.getKey() === currentTile.getKey()
-                        const isTileBehindSame =
-                            tileBehind && tileBehind.getKey() === currentTile.getKey()
-                        const isTileNext2Same =
-                            tileNext2 && tileNext2.getKey() === currentTile.getKey()
-
-                        if (!isTileSame) continue
-                        if (isTileBehindSame) {
-                            const gTemp = group.get(
-                                this.convertToKey(i - directs[k].x, j - directs[k].y)
-                            )
-                            if (gTemp) {
-                                g1 = gTemp
-                                break
-                            }
-                        }
-                        if (isTileNext2Same) {
-                            const gTemp = group.get(
-                                this.convertToKey(i + 2 * directs[k].x, j + 2 * directs[k].y)
-                            )
-                            if (gTemp) {
-                                g1 = gTemp
-                                break
-                            }
-                        }
-                    }
-                    if (g1) group.set(this.convertToKey(i, j), g1)
-                }
-
-                for (let k = 0; k < directs.length; k++) {
-                    const tile = this.getTile(i + directs[k].x, j + directs[k].y)
-                    const tileBehind = this.getTile(i - directs[k].x, j - directs[k].y)
-                    const tileNext2 = this.getTile(i + 2 * directs[k].x, j + 2 * directs[k].y)
-
-                    const isTileSame = tile && tile.getKey() === currentTile.getKey()
-                    const isTileBehindSame =
-                        tileBehind && tileBehind.getKey() === currentTile.getKey()
-                    const isTileNext2Same = tileNext2 && tileNext2.getKey() === currentTile.getKey()
-
-                    if (!isTileSame) continue
-                    let g2 = group.get(this.convertToKey(i + directs[k].x, j + directs[k].y))
-
-                    //-1 x x 2
-
-                    let key = undefined
-
-                    if (g1) key = g1
-                    if (g2) key = g2
-
-                    if (!isTileBehindSame && !isTileNext2Same) continue
-                    if (!isBoom) {
-                        cols[currentTile.gridX]++
-                        currentTile.boom()
-                        listBoom.push({ x: i, y: j, newY: -cols[currentTile.gridX] })
-                    }
-
-                    if (key == undefined) {
-                        key = groupIndex
-                        listGroup.push(0)
-                        groupIndex++
-                    }
-
-                    if (g1 != key) {
-                        g1 = key
-                        group.set(this.convertToKey(i, j), key)
-                        listGroup[key]++
-                    }
-                    if (g2 != key) {
-                        g2 = key
-                        group.set(this.convertToKey(i + directs[k].x, j + directs[k].y), key)
-                        listGroup[key]++
-                    }
-
-                    if (isTileBehindSame) {
-                        const g3 = group.get(this.convertToKey(i - directs[k].x, j - directs[k].y))
-
-                        if (g3 != key) {
-                            group.set(this.convertToKey(i - directs[k].x, j - directs[k].y), key)
-                            listGroup[key]++
-                        }
-                    }
-
-                    if (isTileNext2Same) {
-                        const g3 = group.get(
-                            this.convertToKey(i + 2 * directs[k].x, j + 2 * directs[k].y)
-                        )
-
-                        if (g3 != key) {
-                            group.set(
-                                this.convertToKey(i + 2 * directs[k].x, j + 2 * directs[k].y),
-                                key
-                            )
-                            listGroup[key]++
-                        }
-                    }
-
-                    isBoom = true
-
-                    this.addTileBoomBySuperMegaToGroup(
-                        currentTile,
-                        i,
-                        j,
-                        group,
-                        groupZeroBoom,
-                        combo
-                    )
-                }
-            }
-        }
+        const data = this.traverse(combo)
+        const cols: number[] = data.cols
+        const listBoom: Array<{ x: number; y: number; newY: number }> = data.listBoom
+        const group = data.group
+        const listGroup = data.listGroup
+        const groupZeroBoom: Array<{ x: number; y: number }> = data.groupZeroBoom
 
         //Boom all tile boom by super, mega - Wrost case O(n^2)
         while (groupZeroBoom.length > 0) {
@@ -371,7 +236,6 @@ export default class TileManager {
             scoreGot *= idx + 1
 
             //handle location of super/mega tile in match >= 4
-
             let gridX = -2
             let gridY = -2
 
@@ -432,15 +296,13 @@ export default class TileManager {
                     queueMatch4Tween.push({ groupIdx: i, tile: tile })
                     if (listGroup[i] == 4) tile.setSuper()
                     else tile.setMega()
-                } else console.log('Error Tile!', gridX, listGroup)
+                } else console.log('Error Tile!', gridX)
             }
 
-            const gamePlayScene = this.scene as GamePlayScene
-
-            gamePlayScene.scoreBoard.emitterScoreEffect(
+            this.scene.scoreBoard.emitterScoreEffect(
                 temp[i].x / listGroup[i],
                 temp[i].y / listGroup[i],
-                () => gamePlayScene.scoreBoard.addScore(scoreGot)
+                () => this.scene.scoreBoard.addScore(scoreGot)
             )
 
             const text = this.scene.add
@@ -478,44 +340,43 @@ export default class TileManager {
             fallFlag += listTileFromGroup[queueMatch4Tween[i].groupIdx].length
         if (fallFlag == 0) {
             this.handleFall(listBoom, groupZeroBoom, listGroup, cols, combo, onComplete)
-        } else {
-            //Handle tween merge - Wrost case O(n^2/4)
-            for (let i = 0; i < queueMatch4Tween.length; i++) {
-                const tile = queueMatch4Tween[i].tile
-                const groupIdx = queueMatch4Tween[i].groupIdx
-                for (let j = 0; j < listTileFromGroup[groupIdx].length; j++) {
-                    const obj = listTileFromGroup[groupIdx][j]
-                    const image = new Tile(
-                        {
-                            scene: this.scene,
-                            x: this.scene.cameras.main.width / 2,
-                            y: this.scene.cameras.main.height / 2,
-                            texture: tile.getKey(),
-                        },
-                        obj.x,
-                        obj.y
-                    )
-                    image.updatePositon(false)
+            return
+        }
+        //Handle tween merge - Wrost case O(n^2/4)
+        for (let i = 0; i < queueMatch4Tween.length; i++) {
+            const tile = queueMatch4Tween[i].tile
+            const groupIdx = queueMatch4Tween[i].groupIdx
+            for (let j = 0; j < listTileFromGroup[groupIdx].length; j++) {
+                const obj = listTileFromGroup[groupIdx][j]
+                const image = new Tile(
+                    {
+                        scene: this.scene,
+                        x: this.scene.cameras.main.width / 2,
+                        y: this.scene.cameras.main.height / 2,
+                        texture: tile.getKey(),
+                    },
+                    obj.x,
+                    obj.y
+                )
+                image.updatePositon(false)
 
-                    image.gridX = tile.gridX
-                    image.gridY = tile.gridY
+                image.gridX = tile.gridX
+                image.gridY = tile.gridY
 
-                    image.updatePositon(true, undefined, undefined, 500, () => {
-                        image.destroy()
-                        //if (!tile.isSuperTile()) tile.setSuper()
-                        fallFlag--
-                        if (fallFlag == 0) {
-                            this.handleFall(
-                                listBoom,
-                                groupZeroBoom,
-                                listGroup,
-                                cols,
-                                combo + 1,
-                                onComplete
-                            )
-                        }
-                    })
-                }
+                image.updatePositon(true, undefined, undefined, 500, () => {
+                    image.destroy()
+                    fallFlag--
+                    if (fallFlag == 0) {
+                        this.handleFall(
+                            listBoom,
+                            groupZeroBoom,
+                            listGroup,
+                            cols,
+                            combo + 1,
+                            onComplete
+                        )
+                    }
+                })
             }
         }
     }
@@ -653,5 +514,155 @@ export default class TileManager {
 
             tile.setMega(false)
         }
+    }
+
+    private traverse(combo: number): {
+        cols: number[]
+        listBoom: Array<{ x: number; y: number; newY: number }>
+        group: Map<string, number>
+        listGroup: number[]
+        groupZeroBoom: Array<{ x: number; y: number }>
+    } {
+        const cols: number[] = []
+        for (let i = 0; i < CONST.gridWidth; i++) cols.push(0)
+        const listBoom: Array<{ x: number; y: number; newY: number }> = []
+        const group = new Map<string, number>()
+        let groupIndex = 1
+        const listGroup = [0]
+        const groupZeroBoom: Array<{ x: number; y: number }> = []
+
+        const directs = [
+            { x: 0, y: 1 },
+            { x: 0, y: -1 },
+            { x: 1, y: 0 },
+            { x: -1, y: 0 },
+        ]
+
+        //traverse all tile, check tile boom - O(n^2)
+        for (let i = 0; i < CONST.gridHeight; i++) {
+            for (let j = 0; j < CONST.gridWidth; j++) {
+                const currentTile = this.getTile(i, j) as Tile
+                if (!currentTile) console.log('Error index tile!')
+                let g1 = group.get(this.convertToKey(i, j))
+
+                let isBoom = false
+                //find group for g1
+                if (g1 == undefined) {
+                    for (let k = 0; k < directs.length; k++) {
+                        const tile = this.getTile(i + directs[k].x, j + directs[k].y)
+                        const tileBehind = this.getTile(i - directs[k].x, j - directs[k].y)
+                        const tileNext2 = this.getTile(i + 2 * directs[k].x, j + 2 * directs[k].y)
+
+                        const isTileSame = tile && tile.getKey() === currentTile.getKey()
+                        const isTileBehindSame =
+                            tileBehind && tileBehind.getKey() === currentTile.getKey()
+                        const isTileNext2Same =
+                            tileNext2 && tileNext2.getKey() === currentTile.getKey()
+
+                        if (!isTileSame) continue
+                        if (isTileBehindSame) {
+                            const gTemp = group.get(
+                                this.convertToKey(i - directs[k].x, j - directs[k].y)
+                            )
+                            if (gTemp) {
+                                g1 = gTemp
+                                break
+                            }
+                        }
+                        if (isTileNext2Same) {
+                            const gTemp = group.get(
+                                this.convertToKey(i + 2 * directs[k].x, j + 2 * directs[k].y)
+                            )
+                            if (gTemp) {
+                                g1 = gTemp
+                                break
+                            }
+                        }
+                    }
+                    if (g1) group.set(this.convertToKey(i, j), g1)
+                }
+
+                for (let k = 0; k < directs.length; k++) {
+                    const tile = this.getTile(i + directs[k].x, j + directs[k].y)
+                    const tileBehind = this.getTile(i - directs[k].x, j - directs[k].y)
+                    const tileNext2 = this.getTile(i + 2 * directs[k].x, j + 2 * directs[k].y)
+
+                    const isTileSame = tile && tile.getKey() === currentTile.getKey()
+                    const isTileBehindSame =
+                        tileBehind && tileBehind.getKey() === currentTile.getKey()
+                    const isTileNext2Same = tileNext2 && tileNext2.getKey() === currentTile.getKey()
+
+                    if (!isTileSame) continue
+                    let g2 = group.get(this.convertToKey(i + directs[k].x, j + directs[k].y))
+
+                    //-1 x x 2
+
+                    let key = undefined
+
+                    if (g1) key = g1
+                    if (g2) key = g2
+
+                    if (!isTileBehindSame && !isTileNext2Same) continue
+                    if (!isBoom) {
+                        cols[currentTile.gridX]++
+                        currentTile.boom()
+                        listBoom.push({ x: i, y: j, newY: -cols[currentTile.gridX] })
+                    }
+
+                    if (key == undefined) {
+                        key = groupIndex
+                        listGroup.push(0)
+                        groupIndex++
+                    }
+
+                    if (g1 != key) {
+                        g1 = key
+                        group.set(this.convertToKey(i, j), key)
+                        listGroup[key]++
+                    }
+                    if (g2 != key) {
+                        g2 = key
+                        group.set(this.convertToKey(i + directs[k].x, j + directs[k].y), key)
+                        listGroup[key]++
+                    }
+
+                    if (isTileBehindSame) {
+                        const g3 = group.get(this.convertToKey(i - directs[k].x, j - directs[k].y))
+
+                        if (g3 != key) {
+                            group.set(this.convertToKey(i - directs[k].x, j - directs[k].y), key)
+                            listGroup[key]++
+                        }
+                    }
+
+                    if (isTileNext2Same) {
+                        const g3 = group.get(
+                            this.convertToKey(i + 2 * directs[k].x, j + 2 * directs[k].y)
+                        )
+
+                        if (g3 != key) {
+                            group.set(
+                                this.convertToKey(i + 2 * directs[k].x, j + 2 * directs[k].y),
+                                key
+                            )
+                            listGroup[key]++
+                        }
+                    }
+
+                    isBoom = true
+
+                    this.addTileBoomBySuperMegaToGroup(
+                        currentTile,
+                        i,
+                        j,
+                        group,
+                        groupZeroBoom,
+                        combo
+                    )
+                }
+            }
+        }
+
+        return { cols, listBoom, group, listGroup, groupZeroBoom }
     }
 }

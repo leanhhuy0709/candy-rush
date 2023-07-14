@@ -14,8 +14,9 @@ export enum BOARD_STATE {
 }
 
 const IS_DEBUG = false
-const IS_AUTO_PLAY = true
-const IDLE_TIME = 1000
+const IS_AUTO_PLAY = false
+const IDLE_TIME = 5000
+
 export class GamePlayScene extends Phaser.Scene {
     public tileManager: TileManager
 
@@ -73,6 +74,7 @@ export class GamePlayScene extends Phaser.Scene {
                 break
         }
         //console.log(this.boardState)
+        console.log(this.game.loop.actualFps)
     }
 
     private onTileClicked(pointer: Phaser.Input.Pointer | null, gameObject: Tile) {
@@ -162,8 +164,8 @@ export class GamePlayScene extends Phaser.Scene {
     private handleMatch(onComplete?: Function): void {
         if (this.boardState == BOARD_STATE.IDLE || this.boardState == BOARD_STATE.SWAPPING) {
             this.boardState = BOARD_STATE.HANDLING
-            this.tileManager.handleMatch(() => {
-                if (onComplete) onComplete()
+            this.tileManager.handleMatch((isMatch = true) => {
+                if (onComplete) onComplete(isMatch)
                 this.boardState = BOARD_STATE.IDLE
             })
         }
