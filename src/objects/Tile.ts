@@ -1,9 +1,6 @@
 import { CONST } from '../const/const'
 import { IImageConstructor } from '../interfaces/image.interface'
-import { GamePlayScene } from '../scenes/GamePlayScene'
 import ParticleEmitterPool from './ParticleEmitterPool'
-
-const CHANCE = 0.3
 
 const LIMIT_BOOM = 10
 export class Tile extends Phaser.GameObjects.Image {
@@ -202,37 +199,6 @@ export class Tile extends Phaser.GameObjects.Image {
                 onComplete: () => tween.destroy(),
             })
         }
-    }
-
-    public setRandomTextures(coeffX?: number, coeffY?: number): void {
-        const randomTileType: string =
-            CONST.candyTypes[Phaser.Math.RND.between(0, CONST.candyTypes.length - 1)]
-
-        //Increase Chance
-        const chance = Math.random()
-        if (chance < CHANCE) {
-            let x = this.gridX
-            let y = this.gridY
-
-            if (coeffX) x = coeffX
-            if (coeffY) y = coeffY
-
-            if (y < 0) y = 1
-            const scene = this.scene as GamePlayScene
-            const listCandyNextTo = []
-            if (scene.getTile(x - 1, y)) listCandyNextTo.push(scene.getTile(x - 1, y))
-            if (scene.getTile(x + 1, y)) listCandyNextTo.push(scene.getTile(x + 1, y))
-            if (scene.getTile(x, y - 1)) listCandyNextTo.push(scene.getTile(x, y - 1))
-            if (scene.getTile(x, y + 1)) listCandyNextTo.push(scene.getTile(x, y + 1))
-
-            if (listCandyNextTo.length > 0) {
-                this.setTexture(
-                    (
-                        listCandyNextTo[Phaser.Math.Between(0, listCandyNextTo.length - 1)] as Tile
-                    ).getKey()
-                )
-            }
-        } else this.setTexture(randomTileType)
     }
 
     public showHint(): void {
