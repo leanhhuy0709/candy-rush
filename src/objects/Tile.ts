@@ -1,6 +1,7 @@
 import { CONST } from '../const/const'
 import { IImageConstructor } from '../interfaces/image.interface'
 import ParticleEmitterPool from './ParticleEmitterPool'
+import TileManager from './TileManager'
 
 const LIMIT_BOOM = 10
 export class Tile extends Phaser.GameObjects.Image {
@@ -47,7 +48,7 @@ export class Tile extends Phaser.GameObjects.Image {
 
         this.hintTween = this.scene.tweens.add({
             targets: this,
-            scale: 0.8,
+            scale: 0.5,
             duration: 500,
             ease: 'Linear',
             repeat: -1,
@@ -145,7 +146,7 @@ export class Tile extends Phaser.GameObjects.Image {
             if (this.superEmitter) {
                 const tween = this.scene.tweens.add({
                     targets: this.superEmitter,
-                    
+
                     x: newX,
                     y: newY + 10,
                     delay: delay,
@@ -229,7 +230,9 @@ export class Tile extends Phaser.GameObjects.Image {
                 gravityY: 150,
                 blendMode: 'ADD',
                 emitting: false,
-            }).setDepth(6).start(undefined, 1000)
+            })
+                .setDepth(6)
+                .start(undefined, 1000)
             emitter.explode(16)
 
             setTimeout(() => {
@@ -237,20 +240,48 @@ export class Tile extends Phaser.GameObjects.Image {
             }, 500)
         } else {
             const emitter = ParticleEmitterPool.getParticleEmitter(this.x, this.y, 'flares', {
-                frame: [],
+                frame: ['blue'],
                 lifespan: 400,
                 speed: { min: 150, max: 250 },
                 scale: { start: 0.3, end: 0 },
                 gravityY: 150,
                 blendMode: 'ADD',
                 emitting: false,
-            }).setDepth(6).start(undefined, 1000)
+            })
+                .setDepth(6)
+                .start(0, 1000)
             emitter.explode(16)
 
             setTimeout(() => {
                 ParticleEmitterPool.removeParticleEmitter(emitter)
-            }, 500)
+            }, 1000)
         }
+    }
+
+    public static bigBoom(): void {
+        if (Tile.boomFlag <= LIMIT_BOOM) return
+
+        const emitter = ParticleEmitterPool.getParticleEmitter(
+            300,
+            400,
+            'flares',
+            {
+                frame: ['red', 'blue'],
+                lifespan: 1000,
+                speed: { min: 350, max: 450 },
+                scale: { start: 0.75, end: 0 },
+                gravityY: 150,
+                blendMode: 'ADD',
+                emitting: false,
+            }
+        )
+            .setDepth(6)
+            .start(0, 2000)
+        emitter.explode(50)
+
+        setTimeout(() => {
+            ParticleEmitterPool.removeParticleEmitter(emitter)
+        }, 2000)
     }
 
     public setSuper(value = true): void {
@@ -276,7 +307,9 @@ export class Tile extends Phaser.GameObjects.Image {
                     advance: 2000,
                     blendMode: 'ADD',
                 }
-            ).setDepth(3).start(undefined, 1000)
+            )
+                .setDepth(3)
+                .start(0, 1000)
         }
     }
 
@@ -302,7 +335,9 @@ export class Tile extends Phaser.GameObjects.Image {
                     advance: 2000,
                     blendMode: 'ADD',
                 }
-            ).setDepth(3).start(undefined, 1000)
+            )
+                .setDepth(3)
+                .start(undefined, 1000)
         }
     }
 
@@ -319,5 +354,86 @@ export class Tile extends Phaser.GameObjects.Image {
             this.superEmitter.x = this.x
             this.superEmitter.y = this.y + 10
         }
+    }
+
+    public goto(data: {
+        x: number
+        y: number
+        isNotTween?: boolean
+        delay?: number
+        duration?: number
+        ease?: string | Function
+        onComplete?: Function
+        onCompleteAll?: Function
+    }): void {
+        if (data.isNotTween) {
+            this.x = data.x
+            this.y = data.y
+
+            this.updateSuperEmitterPosition()
+
+            return
+        }
+
+        Tile.numTweenRunning++
+        const tween = this.scene.tweens.add({
+            targets: this,
+            x: data.x,
+            y: data.y,
+            delay: data.delay ? data.delay : 0,
+            duration: data.duration ? data.duration : 500,
+            ease: data.ease ? data.ease : Phaser.Math.Easing.Linear,
+            onComplete: () => {
+                Tile.numTweenRunning--
+                if (data.onComplete) {
+                    data.onComplete()
+                }
+                if (data.onCompleteAll && Tile.numTweenRunning == 0) {
+                    data.onCompleteAll()
+                }
+                tween.destroy()
+            },
+            onUpdate: () => {
+                this.updateSuperEmitterPosition()
+            },
+        })
+    }
+
+    public gotoGrid(data: {
+        isNotTween?: boolean
+        delay?: number
+        duration?: number
+        ease?: string | Function
+        onComplete?: Function
+        onCompleteAll?: Function
+    }): void {
+        //
+        const newX =
+            CONST.tileWidth / 2 +
+            this.gridX * (CONST.tileWidth + CONST.margin) +
+            (this.scene.cameras.main.width - (CONST.tileWidth + CONST.margin) * CONST.gridWidth)
+
+        const newY = CONST.tileHeight / 2 + this.gridY * (CONST.tileHeight + CONST.margin) + 100
+
+        this.goto({
+            x: newX,
+            y: newY,
+            isNotTween: data.isNotTween,
+            delay: data.delay,
+            duration: data.duration,
+            ease: data.ease,
+            onComplete: data.onComplete,
+            onCompleteAll: data.onCompleteAll,
+        })
+    }
+
+    public setGrid(tileManager: TileManager, x?: number, y?: number): void {
+        if (x == undefined) x = this.gridX
+        if (y == undefined) y = this.gridY
+
+        tileManager.removeTile(this.gridX, this.gridY)
+        this.gridX = x
+        this.gridY = y
+        tileManager.setTile(this.gridX, this.gridY, this)
     }
 }

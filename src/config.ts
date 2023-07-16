@@ -14,16 +14,5 @@ export const GameConfig: Phaser.Types.Core.GameConfig = {
     },
     width: 600,
     height: 800,
-    scale: {
-        mode: Phaser.Scale.FIT,
-        autoCenter: Phaser.Scale.Center.CENTER_BOTH,
-    },
-    backgroundColor: '#000000',
-    render: { pixelArt: false, antialias: true },
-    fps: {
-        forceSetTimeOut: true,
-        panicMax: 0,
-        smoothStep: false,
-        target: 100,
-    },
+    backgroundColor: '#000000'
 }

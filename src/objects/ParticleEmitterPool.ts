@@ -12,7 +12,6 @@ export default class ParticleEmitterPool {
         textures: string,
         config: Phaser.Types.GameObjects.Particles.ParticleEmitterConfig
     ): Phaser.GameObjects.Particles.ParticleEmitter {
-
         return this.scene.add.particles(x, y, textures, config)
         /*
         
@@ -25,17 +24,18 @@ export default class ParticleEmitterPool {
             return emitter
         }
 
-        return this.scene.add.particles(x, y, textures, config)*/
+        return this.scene.add.particles(x, y, textures, config)//*/
     }
 
     public static removeParticleEmitter(
         emitter: Phaser.GameObjects.Particles.ParticleEmitter
     ): void {
+        
         emitter.destroy()
         /*
         
         emitter.setVisible(false)
-        emitter.setActive(false)
+        emitter.stop()
         ParticleEmitterPool.particleEmitterList.push(emitter)*/
     }
 }

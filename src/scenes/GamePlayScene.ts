@@ -18,12 +18,8 @@ const IS_AUTO_PLAY = false
 const IDLE_TIME = 5000
 
 export class GamePlayScene extends Phaser.Scene {
-    public tileManager: TileManager
-
     private firstSelectedTile: Tile | null
     private secondSelectedTile: Tile | null
-
-    public scoreBoard: ScoreBoard
 
     private idleTime: number
     private isIdleTweenPlaying: boolean
@@ -31,7 +27,9 @@ export class GamePlayScene extends Phaser.Scene {
     private hintTile1: Tile | null
     private hintTile2: Tile | null
 
+    public tileManager: TileManager
     public boardState: BOARD_STATE
+    public scoreBoard: ScoreBoard
 
     public constructor() {
         super({
@@ -43,7 +41,7 @@ export class GamePlayScene extends Phaser.Scene {
         this.add.image(0, 0, 'bg').setOrigin(0, 0)
         ParticleEmitterPool.init(this)
         this.tileManager = new TileManager(this)
-        this.boardState = BOARD_STATE.HANDLING
+
         this.shuffle()
         this.scoreBoard = new ScoreBoard(this)
 
@@ -73,8 +71,6 @@ export class GamePlayScene extends Phaser.Scene {
                 this.resetSelect()
                 break
         }
-        //console.log(this.boardState)
-        console.log(this.game.loop.actualFps)
     }
 
     private onTileClicked(pointer: Phaser.Input.Pointer | null, gameObject: Tile) {
@@ -138,36 +134,46 @@ export class GamePlayScene extends Phaser.Scene {
             const time = 500
 
             this.firstSelectedTile.goToPosition(x2, y2, undefined, undefined, time, () => {
-                if (this.firstSelectedTile && this.secondSelectedTile)
-                    this.tileManager.swapTilesWithoutEffect(
-                        this.firstSelectedTile.gridX,
-                        this.firstSelectedTile.gridY,
-                        this.secondSelectedTile.gridX,
-                        this.secondSelectedTile.gridY
-                    )
                 onComplete()
             })
 
             this.secondSelectedTile.goToPosition(x1, y1, undefined, undefined, time, () => {
-                if (this.firstSelectedTile && this.secondSelectedTile)
-                    this.tileManager.swapTilesWithoutEffect(
-                        this.firstSelectedTile.gridX,
-                        this.firstSelectedTile.gridY,
-                        this.secondSelectedTile.gridX,
-                        this.secondSelectedTile.gridY
-                    )
                 onComplete()
             })
+
+            this.tileManager.swapTilesWithoutEffect(
+                this.firstSelectedTile.gridX,
+                this.firstSelectedTile.gridY,
+                this.secondSelectedTile.gridX,
+                this.secondSelectedTile.gridY
+            )
         }
     }
 
     private handleMatch(onComplete?: Function): void {
         if (this.boardState == BOARD_STATE.IDLE || this.boardState == BOARD_STATE.SWAPPING) {
             this.boardState = BOARD_STATE.HANDLING
-            this.tileManager.handleMatch((isMatch = true) => {
-                if (onComplete) onComplete(isMatch)
-                this.boardState = BOARD_STATE.IDLE
-            })
+
+            if (this.firstSelectedTile && this.secondSelectedTile) {
+                this.tileManager.handleMatch(
+                    [
+                        { x: this.secondSelectedTile.gridX, y: this.secondSelectedTile.gridY },
+                        { x: this.firstSelectedTile.gridX, y: this.firstSelectedTile.gridY },
+                    ],
+                    (isMatch = true) => {
+                        if (onComplete) onComplete(isMatch)
+                        this.boardState = BOARD_STATE.IDLE
+                    }
+                )
+            } else {
+                const initQueue: Array<{ x: number; y: number }> = []
+                for (let i = 0; i < CONST.gridWidth; i++)
+                    for (let j = 0; j < CONST.gridHeight; j++) initQueue.push({ x: i, y: j })
+                this.tileManager.handleMatch(initQueue, (isMatch = true) => {
+                    if (onComplete) onComplete(isMatch)
+                    this.boardState = BOARD_STATE.IDLE
+                })
+            }
         }
     }
 
@@ -393,7 +399,7 @@ export class GamePlayScene extends Phaser.Scene {
 
     public shuffle(): void {
         this.boardState = BOARD_STATE.HANDLING
-        this.idleTime = 0
+
         const shape = this.getRandomShape()
         this.tileManager.shuffleCandyList()
 

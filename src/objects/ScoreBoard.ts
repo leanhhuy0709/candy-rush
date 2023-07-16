@@ -33,7 +33,7 @@ class ConfettiParticle extends Phaser.GameObjects.Particles.Particle {
         this.x = x + ((delta * this.velocityX) / 1000) * ease2
         this.y = y + ((delta * this.velocityY) / 1000) * ease2
 
-        this.angle += delta/1000 * 20
+        this.angle += (delta / 1000) * 20
 
         return val
     }
@@ -91,7 +91,9 @@ export default class ScoreBoard {
                 advance: 2000,
                 blendMode: 'ADD',
             }
-        ).setDepth(6).start(undefined, -1)
+        )
+            .setDepth(6)
+            .start(undefined, -1)
 
         this.scene.add
             .graphics()
@@ -126,18 +128,21 @@ export default class ScoreBoard {
             .setDepth(6)
             .setOrigin(0.5, 0.5)
 
-        this.confettiEmitter = this.scene.add.particles(0, 300, 'confetti', {
-            frame: ['1', '2', '3', '4', '5'],
-            lifespan: 3500,
-            scale: { start: 0.3, end: 0.5 },
-            alpha: { start: 75, end: 100 },
-            angle: { min: -180, max: 180 },
-            speedX: { min: 300, max: 800 }, 
-            speedY: { min: -1000, max: -500 }, 
-            gravityY: 1800,
-            quantity: 1,
-            particleClass: ConfettiParticle,
-        }).setDepth(7).stop()
+        this.confettiEmitter = this.scene.add
+            .particles(0, 300, 'confetti', {
+                frame: ['1', '2', '3', '4', '5'],
+                lifespan: 3500,
+                scale: { start: 0.3, end: 0.5 },
+                alpha: { start: 75, end: 100 },
+                angle: { min: -180, max: 180 },
+                speedX: { min: 300, max: 800 },
+                speedY: { min: -1000, max: -500 },
+                gravityY: 1800,
+                quantity: 1,
+                particleClass: ConfettiParticle,
+            })
+            .setDepth(7)
+            .stop()
     }
 
     public addScore(score: number): void {
@@ -194,6 +199,7 @@ export default class ScoreBoard {
 
         const emitter = ParticleEmitterPool.getParticleEmitter(0, 0, 'flares', {
             frame: { frames: ['red', 'green', 'blue', 'yellow'], cycle: true },
+            color: [0x00ff00],
             blendMode: Phaser.BlendModes.ADD,
             follow: tempObj,
             speed: 100,
@@ -201,7 +207,9 @@ export default class ScoreBoard {
             lifespan: 1000,
             quantity: 1,
             scale: { start: 0.3, end: 0.1 },
-        }).setDepth(6).start(undefined, 1000)
+        })
+            .setDepth(6)
+            .start(undefined, 1000)
 
         let percent =
             (this.score - this.levels[this.level - 1]) /
@@ -223,5 +231,19 @@ export default class ScoreBoard {
                 if (onComplete) onComplete()
             },
         })
+    }
+
+    public static caculateScore(numTile: number): number {
+        switch (numTile) {
+            case 3: return 30
+            case 4: return 50
+            case 5: return 90
+            case 6: return 170
+            case 7: return 330
+            case 8: return 600
+            case 9: return 1000
+            case 10: return 2000
+            default: return 2000 + (numTile - 10) * 70
+        }
     }
 }
