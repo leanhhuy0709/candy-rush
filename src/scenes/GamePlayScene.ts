@@ -71,6 +71,8 @@ export class GamePlayScene extends Phaser.Scene {
                 this.resetSelect()
                 break
         }
+
+        console.log(this.boardState)
     }
 
     private onTileClicked(pointer: Phaser.Input.Pointer | null, gameObject: Tile) {

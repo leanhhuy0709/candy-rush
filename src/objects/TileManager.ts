@@ -5,6 +5,8 @@ import { Tile } from './Tile'
 
 const SIMILAR_CANDY_CHANCE = 0.3
 
+const GRID_HEIGHT_RELATIVE_TOP = 3
+
 export default class TileManager {
     private scene: GamePlayScene
     private tileMap: Map<string, Tile>
@@ -140,6 +142,22 @@ export default class TileManager {
             let g1 = group.get(this.convertToKey(coord.x, coord.y))
 
             let isBoom = false
+            //check tile 'can' boom? -> Only group tile can boom!
+            let canBoom = false
+            for (const d of directs) {
+                const tileNext = this.getTile(coord.x + d.x, coord.y + d.y)
+                if (!tileNext || tileNext.getKey() !== tile.getKey()) continue
+
+                const tileBehind = this.getTile(coord.x - d.x, coord.y - d.y)
+                const tileNext2 = this.getTile(coord.x + 2 * d.x, coord.y + 2 * d.y)
+
+                const isTileBehindSame = tileBehind && tileBehind.getKey() === tile.getKey()
+                const isTileNext2Same = tileNext2 && tileNext2.getKey() === tile.getKey()
+
+                if (isTileBehindSame || isTileNext2Same)
+                    canBoom = true
+            }
+            if (!canBoom) continue
 
             if (!g1) {
                 g1 = groupIndex
@@ -236,6 +254,8 @@ export default class TileManager {
             }
         }
 
+        //handle Super/Mega Tile boomm
+
         this.handleMerge(group, numTileInGroup, firstTileInEveryGroup, onComplete)
     }
 
@@ -247,7 +267,7 @@ export default class TileManager {
     ): void {
         this.scene.boardState = BOARD_STATE.MERGING
         const cols: number[] = []
-        for (let i = 0; i < CONST.gridWidth; i++) cols.push(0)
+        for (let i = 0; i < CONST.gridWidth; i++) cols.push(GRID_HEIGHT_RELATIVE_TOP)
 
         let isGroup45Exist = false
 
@@ -338,10 +358,11 @@ export default class TileManager {
 
         let isBoom = false
 
-        for (let i = 0; i < cols.length; i++) if (cols[i] > 0) isBoom = true
+        for (let i = 0; i < cols.length; i++) if (cols[i] > GRID_HEIGHT_RELATIVE_TOP) isBoom = true
 
         if (!isBoom) {
             if (onComplete) onComplete(false)
+            this.scene.boardState = BOARD_STATE.IDLE
             return
         }
 
@@ -362,6 +383,7 @@ export default class TileManager {
 
                         tile.gotoGrid({
                             duration: num * 100 + 200,
+                            delay: 200,
                             ease: Phaser.Math.Easing.Bounce.Out,
                             onCompleteAll: () => {
                                 if (onComplete) onComplete()
@@ -374,8 +396,11 @@ export default class TileManager {
                                     }
                                 }
 
-                                if (queue.length > 0) this.handleMatch(queue, onComplete)
-                                else if (onComplete) onComplete()
+                                if (queue.length > 0) {
+                                    this.handleMatch(queue, onComplete)
+                                } else {
+                                    if (onComplete) onComplete()
+                                }
                             },
                         })
                     }
