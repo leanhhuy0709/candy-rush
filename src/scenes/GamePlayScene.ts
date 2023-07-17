@@ -449,8 +449,8 @@ export class GamePlayScene extends Phaser.Scene {
         }
     }
 
-    private getRandomShape(): Phaser.Geom.Rectangle | Phaser.Geom.Circle | Phaser.Geom.Ellipse {
-        const randomNumber = Phaser.Math.Between(0, 2)
+    private getRandomShape(): Phaser.Geom.Rectangle | Phaser.Geom.Circle | Phaser.Geom.Ellipse | Phaser.Geom.Triangle {
+        const randomNumber = Phaser.Math.Between(0, 5)
         const centerX = this.cameras.main.width / 2
         const centerY = this.cameras.main.height / 2
         switch (randomNumber) {
@@ -458,19 +458,27 @@ export class GamePlayScene extends Phaser.Scene {
                 return new Phaser.Geom.Rectangle(centerX - 150, centerY - 150, 300, 300)
             case 1:
                 return new Phaser.Geom.Circle(centerX, centerY, 200)
-            default:
+            case 2:
+                return new Phaser.Geom.Ellipse(centerX, centerY, 300, 200)
+            case 3:
                 return new Phaser.Geom.Ellipse(centerX, centerY, 200, 300)
+            case 4:
+                return new Phaser.Geom.Triangle(centerX, centerY - 200, centerX - 200, centerY + 200, centerX + 200, centerY + 200)
+            default:
+                return new Phaser.Geom.Rectangle(centerX - 200, centerY - 100, 400, 200)
         }
     }
 
     private getPointFromShape(
-        shape: Phaser.Geom.Rectangle | Phaser.Geom.Circle | Phaser.Geom.Ellipse,
+        shape: Phaser.Geom.Rectangle | Phaser.Geom.Circle | Phaser.Geom.Ellipse | Phaser.Geom.Triangle,
         value: number
     ): Phaser.Geom.Point {
         if (shape instanceof Phaser.Geom.Rectangle)
             return Phaser.Geom.Rectangle.GetPoint(shape, value)
         else if (shape instanceof Phaser.Geom.Circle)
             return Phaser.Geom.Circle.GetPoint(shape, value)
-        return Phaser.Geom.Ellipse.GetPoint(shape, value)
+        else if (shape instanceof Phaser.Geom.Ellipse)
+            return Phaser.Geom.Ellipse.GetPoint(shape, value)
+        return Phaser.Geom.Triangle.GetPoint(shape, value)
     }
 }
