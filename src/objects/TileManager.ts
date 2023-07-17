@@ -131,6 +131,8 @@ export default class TileManager {
             { x: -1, y: 0 },
         ]
 
+        const queueSuperMega: Array<{ x: number; y: number }> = []
+
         while (queue.length > 0) {
             const coord = queue.pop() as { x: number; y: number }
             const tile = this.getTile(coord.x, coord.y) as Tile
@@ -154,8 +156,7 @@ export default class TileManager {
                 const isTileBehindSame = tileBehind && tileBehind.getKey() === tile.getKey()
                 const isTileNext2Same = tileNext2 && tileNext2.getKey() === tile.getKey()
 
-                if (isTileBehindSame || isTileNext2Same)
-                    canBoom = true
+                if (isTileBehindSame || isTileNext2Same) canBoom = true
             }
             if (!canBoom) continue
 
@@ -224,14 +225,27 @@ export default class TileManager {
                 }
             }
             if (!isBoom) continue
+            if (tile.isSuperTile() || tile.isMegaTile()) {
+                queueSuperMega.push({ x: coord.x, y: coord.y })
+            }
+        }
+
+        while (queueSuperMega.length > 0) {
+            const coord = queueSuperMega.pop() as { x: number; y: number }
+            const tile = this.getTile(coord.x, coord.y) as Tile
             if (tile.isSuperTile()) {
                 for (let i = -1; i <= 1; i++) {
                     for (let j = -1; j <= 1; j++) {
                         const nextTile = this.getTile(coord.x + i, coord.y + j)
                         if (nextTile) {
                             const nextGroup = group.get(this.convertToKey(coord.x + i, coord.y + j))
-                            if (!nextGroup)
+                            if (!nextGroup) {
                                 group.set(this.convertToKey(coord.x + i, coord.y + j), 0)
+
+                                if (nextTile.isSuperTile() || nextTile.isMegaTile()) {
+                                    queueSuperMega.push({ x: coord.x + i, y: coord.y + j })
+                                }
+                            }
                         }
                     }
                 }
@@ -241,19 +255,28 @@ export default class TileManager {
                     let nextTile = this.getTile(i, coord.y)
                     if (nextTile) {
                         const nextGroup = group.get(this.convertToKey(i, coord.y))
-                        if (!nextGroup) group.set(this.convertToKey(i, coord.y), 0)
+                        if (!nextGroup) {
+                            group.set(this.convertToKey(i, coord.y), 0)
+                            if (nextTile.isSuperTile() || nextTile.isMegaTile()) {
+                                queueSuperMega.push({ x: i, y: coord.y })
+                            }
+                        }
                     }
 
                     nextTile = this.getTile(coord.x, i)
                     if (nextTile) {
                         const nextGroup = group.get(this.convertToKey(coord.x, i))
-                        if (!nextGroup) group.set(this.convertToKey(coord.x, i), 0)
+                        if (!nextGroup) {
+                            group.set(this.convertToKey(coord.x, i), 0)
+                            if (nextTile.isSuperTile() || nextTile.isMegaTile()) {
+                                queueSuperMega.push({ x: coord.x, y: i })
+                            }
+                        }
                     }
                 }
                 tile.setMega(false)
             }
         }
-
         //handle Super/Mega Tile boomm
 
         this.handleMerge(group, numTileInGroup, firstTileInEveryGroup, onComplete)
