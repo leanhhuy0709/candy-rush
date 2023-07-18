@@ -93,7 +93,7 @@ export default class ScoreBoard {
             }
         )
             .setDepth(6)
-            .start(undefined, -1)
+            .start()
 
         this.scene.add
             .graphics()
@@ -195,6 +195,7 @@ export default class ScoreBoard {
     }
 
     public emitterScoreEffect(x: number, y: number, onComplete?: Function): void {
+        
         const tempObj = this.scene.add.image(x, y, '').setVisible(false)
 
         const emitter = ParticleEmitterPool.getParticleEmitter(0, 0, 'flares', {
@@ -209,7 +210,7 @@ export default class ScoreBoard {
             scale: { start: 0.3, end: 0.1 },
         })
             .setDepth(6)
-            .start(undefined, 1000)
+            .start()
 
         let percent =
             (this.score - this.levels[this.level - 1]) /
@@ -225,6 +226,8 @@ export default class ScoreBoard {
             duration: 1000,
             onComplete: () => {
                 tempObj.destroy()
+                emitter.setX(0)
+                emitter.setY(0)
                 ParticleEmitterPool.removeParticleEmitter(emitter)
                 tween.destroy()
 

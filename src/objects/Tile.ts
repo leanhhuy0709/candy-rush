@@ -6,7 +6,7 @@ import TileManager from './TileManager'
 const LIMIT_BOOM = 10
 export class Tile extends Phaser.GameObjects.Image {
     private tween: Phaser.Tweens.Tween
-    private graphics: Phaser.GameObjects.Graphics
+    //private graphics: Phaser.GameObjects.Graphics
     public gridX: number
     public gridY: number
 
@@ -27,13 +27,13 @@ export class Tile extends Phaser.GameObjects.Image {
         this.gridX = gridX
         this.gridY = gridY
 
-        this.graphics = this.scene.add
+        /*this.graphics = this.scene.add
             .graphics()
             .lineStyle(2, 0xb9e6ff)
             .setVisible(false)
             .setDepth(4)
         this.graphics.strokeRoundedRect(0, 0, this.width + 2, this.height)
-        this.setGraphics()
+        this.setGraphics()*/
 
         this.scene.add.existing(this)
 
@@ -73,19 +73,19 @@ export class Tile extends Phaser.GameObjects.Image {
     }
 
     public showGraphics(): void {
-        this.setGraphics()
-        this.graphics.setVisible(true)
+        //this.setGraphics()
+        //this.graphics.setVisible(true)
     }
 
     public hideGraphics(): void {
-        this.graphics.setVisible(false)
+        //this.graphics.setVisible(false)
     }
 
     private setGraphics(): void {
-        const w = this.width + 2
-        const h = this.height
-        this.graphics.x = this.x - w / 2
-        this.graphics.y = this.y - h / 2
+        //const w = this.width + 2
+        //const h = this.height
+        //this.graphics.x = this.x - w / 2
+        //this.graphics.y = this.y - h / 2
     }
 
     public getKey(): string {
@@ -222,7 +222,7 @@ export class Tile extends Phaser.GameObjects.Image {
         if (Tile.boomFlag > LIMIT_BOOM) return
         Tile.boomFlag++
         if (this.isSuperTile() || this.isMegaTile()) {
-            const emitter = ParticleEmitterPool.getParticleEmitter(this.x, this.y, 'flares', {
+            const emitter = ParticleEmitterPool.getExplodeEmitter(this.x, this.y, 'flares', {
                 frame: ['red'],
                 lifespan: 400,
                 speed: { min: 150, max: 250 },
@@ -232,14 +232,13 @@ export class Tile extends Phaser.GameObjects.Image {
                 emitting: false,
             })
                 .setDepth(6)
-                .start(undefined, 1000)
             emitter.explode(16)
 
             setTimeout(() => {
-                ParticleEmitterPool.removeParticleEmitter(emitter)
+                ParticleEmitterPool.removeExplodeEmitter(emitter)
             }, 500)
         } else {
-            const emitter = ParticleEmitterPool.getParticleEmitter(this.x, this.y, 'flares', {
+            const emitter = ParticleEmitterPool.getExplodeEmitter(this.x, this.y, 'flares', {
                 frame: ['blue'],
                 lifespan: 400,
                 speed: { min: 150, max: 250 },
@@ -249,11 +248,10 @@ export class Tile extends Phaser.GameObjects.Image {
                 emitting: false,
             })
                 .setDepth(6)
-                .start(0, 1000)
             emitter.explode(16)
 
             setTimeout(() => {
-                ParticleEmitterPool.removeParticleEmitter(emitter)
+                ParticleEmitterPool.removeExplodeEmitter(emitter)
             }, 1000)
         }
     }
@@ -261,7 +259,7 @@ export class Tile extends Phaser.GameObjects.Image {
     public static bigBoom(): void {
         if (Tile.boomFlag <= LIMIT_BOOM) return
 
-        const emitter = ParticleEmitterPool.getParticleEmitter(
+        const emitter = ParticleEmitterPool.getExplodeEmitter(
             300,
             400,
             'flares',
@@ -276,11 +274,10 @@ export class Tile extends Phaser.GameObjects.Image {
             }
         )
             .setDepth(6)
-            .start(0, 2000)
         emitter.explode(50)
 
         setTimeout(() => {
-            ParticleEmitterPool.removeParticleEmitter(emitter)
+            ParticleEmitterPool.removeExplodeEmitter(emitter)
         }, 2000)
     }
 
@@ -309,7 +306,7 @@ export class Tile extends Phaser.GameObjects.Image {
                 }
             )
                 .setDepth(3)
-                .start(0, 1000)
+                .start()
         }
     }
 
@@ -337,7 +334,7 @@ export class Tile extends Phaser.GameObjects.Image {
                 }
             )
                 .setDepth(3)
-                .start(undefined, 1000)
+                .start()
         }
     }
 

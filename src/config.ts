@@ -12,6 +12,11 @@ export const GameConfig: Phaser.Types.Core.GameConfig = {
     input: {
         keyboard: true,
     },
+    scale: {
+        mode: Phaser.Scale.ScaleModes.FIT,
+        autoCenter: Phaser.Scale.Center.CENTER_BOTH,
+        resizeInterval: 1,
+    },
     width: 600,
     height: 800,
     backgroundColor: '#000000'

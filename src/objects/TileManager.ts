@@ -7,6 +7,8 @@ const SIMILAR_CANDY_CHANCE = 0.3
 
 const GRID_HEIGHT_RELATIVE_TOP = 3
 
+const NUM_CANDY = 5
+
 export default class TileManager {
     private scene: GamePlayScene
     private tileMap: Map<string, Tile>
@@ -19,7 +21,7 @@ export default class TileManager {
 
         this.tileMap = new Map<string, Tile>()
 
-        this.numCandy = 5
+        this.numCandy = NUM_CANDY
         for (let i = 0; i < this.numCandy; i++) {
             this.candyList.push(CONST.candyTypes[i])
         }
@@ -374,8 +376,8 @@ export default class TileManager {
         if (Tile.boomFlag > 10) {
             //big boom
             Tile.bigBoom()
-            Tile.boomFlag = 0
         }
+        Tile.boomFlag = 0
 
         this.scene.boardState = BOARD_STATE.FALLING
 
