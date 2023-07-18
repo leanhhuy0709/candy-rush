@@ -47,7 +47,7 @@ export default class ScoreBoard {
     private scoreText: Phaser.GameObjects.Text
     private targetText: Phaser.GameObjects.Text
 
-    private progressBar: Phaser.GameObjects.Graphics
+    private progressBar: Phaser.GameObjects.Rectangle
 
     private progressBarEmitter: Phaser.GameObjects.Particles.ParticleEmitter
 
@@ -95,20 +95,14 @@ export default class ScoreBoard {
             .setDepth(6)
             .start()
 
-        this.scene.add
-            .graphics()
-            .lineStyle(3, 0xed3896)
-            .setDepth(9)
-            .strokeRoundedRect(progressBarX, progressBarY, progressBarWidth, progressBarHeight, 5)
-            .fillStyle(0x002d66)
-            .fillRoundedRect(progressBarX, progressBarY, progressBarWidth, progressBarHeight, 5)
-            .setDepth(4)
+        this.progressBar = this.scene.add.rectangle(
+            progressBarX,
+            progressBarY,
+            progressBarWidth,
+            progressBarHeight,
+            0xf5d1b6
+        ).setOrigin(0, 0)
 
-        this.progressBar = this.scene.add
-            .graphics()
-            .fillStyle(0xf5d1b6)
-            .fillRoundedRect(progressBarX, progressBarY, progressBarWidth, progressBarHeight, 5)
-            .setDepth(5)
         this.updateProgressBar(0)
 
         this.targetText = scene.add
@@ -158,44 +152,35 @@ export default class ScoreBoard {
     public updateProgressBar(percent: number): void {
         if (percent <= 0.05) percent = 0.05
         if (percent > 1) percent = 1
-        this.progressBar.clear()
-        this.progressBar
-            .fillStyle(0xf5d1b6)
-            .fillRoundedRect(
-                progressBarX,
-                progressBarY,
-                percent * progressBarWidth,
-                progressBarHeight,
-                5
-            )
-            .setDepth(5)
+
+        this.progressBar.setSize(percent * progressBarWidth, progressBarHeight)
 
         this.progressBarEmitter.setPosition(
             progressBarX + percent * progressBarWidth - 5,
             progressBarY + progressBarHeight / 2
         )
 
-        if (percent >= 0.1) this.progressBarEmitter.setVisible(true)
+        if (percent >= 0.3) this.progressBarEmitter.setVisible(true)
         else this.progressBarEmitter.setVisible(false)
     }
 
     public handleGoToNextLevel(): void {
+        if (this.score < this.levels[this.level]) return
         while (this.score >= this.levels[this.level]) {
             this.level++
-            this.targetText.setText(`${this.levels[this.level]}`)
-            this.updateProgressBar(
-                (this.score - this.levels[this.level - 1]) /
-                    (this.levels[this.level] - this.levels[this.level - 1])
-            )
-            const scene = this.scene as GamePlayScene
-            scene.shuffle()
-
-            this.confettiEmitter.start(undefined, 1000)
         }
+        this.targetText.setText(`${this.levels[this.level]}`)
+        this.updateProgressBar(
+            (this.score - this.levels[this.level - 1]) /
+                (this.levels[this.level] - this.levels[this.level - 1])
+        )
+        const scene = this.scene as GamePlayScene
+        scene.shuffle()
+
+        this.confettiEmitter.start(undefined, 1000)
     }
 
     public emitterScoreEffect(x: number, y: number, onComplete?: Function): void {
-        
         const tempObj = this.scene.add.image(x, y, '').setVisible(false)
 
         const emitter = ParticleEmitterPool.getParticleEmitter(0, 0, 'flares', {
@@ -238,15 +223,24 @@ export default class ScoreBoard {
 
     public static caculateScore(numTile: number): number {
         switch (numTile) {
-            case 3: return 30
-            case 4: return 50
-            case 5: return 90
-            case 6: return 170
-            case 7: return 330
-            case 8: return 600
-            case 9: return 1000
-            case 10: return 2000
-            default: return 2000 + (numTile - 10) * 70
+            case 3:
+                return 30
+            case 4:
+                return 50
+            case 5:
+                return 90
+            case 6:
+                return 170
+            case 7:
+                return 330
+            case 8:
+                return 600
+            case 9:
+                return 1000
+            case 10:
+                return 2000
+            default:
+                return 2000 + (numTile - 10) * 70
         }
     }
 }

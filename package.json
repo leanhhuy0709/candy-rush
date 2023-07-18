@@ -55,6 +55,7 @@
   "dependencies": {
     "gh-pages": "^5.0.0",
     "phaser": "^3.60.0",
+    "spectorjs": "^0.9.29",
     "yarn": "^1.22.19"
   }
 }

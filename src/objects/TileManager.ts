@@ -3,7 +3,7 @@ import { BOARD_STATE, GamePlayScene } from '../scenes/GamePlayScene'
 import ScoreBoard from './ScoreBoard'
 import { Tile } from './Tile'
 
-const SIMILAR_CANDY_CHANCE = 0.3
+const SIMILAR_CANDY_CHANCE = 0.33
 
 const GRID_HEIGHT_RELATIVE_TOP = 3
 

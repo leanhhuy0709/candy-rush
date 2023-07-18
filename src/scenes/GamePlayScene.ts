@@ -13,11 +13,12 @@ export enum BOARD_STATE {
     MERGING = 'Merging',
 }
 
-const IS_DEBUG = false
+const IS_DEBUG = true
 const IS_AUTO_PLAY = false
 const IDLE_TIME = 5000
 
 export class GamePlayScene extends Phaser.Scene {
+    stats: any
     private firstSelectedTile: Tile | null
     private secondSelectedTile: Tile | null
 
@@ -31,6 +32,12 @@ export class GamePlayScene extends Phaser.Scene {
     public boardState: BOARD_STATE
     public scoreBoard: ScoreBoard
 
+    public debugConsole(): void {
+        if (!IS_DEBUG) return
+        //console something you want
+        console.log(this.children)
+    }
+
     public constructor() {
         super({
             key: SCENE.GAMEPLAY,
@@ -38,6 +45,9 @@ export class GamePlayScene extends Phaser.Scene {
     }
 
     public create() {
+        this.addStats()
+        //this.showDrawCall()
+
         this.add.image(0, 0, 'bg').setOrigin(0, 0)
         ParticleEmitterPool.init(this)
         this.tileManager = new TileManager(this)
@@ -73,6 +83,7 @@ export class GamePlayScene extends Phaser.Scene {
         }
 
         //console.log(this.boardState)
+        this.debugConsole()
     }
 
     private onTileClicked(pointer: Phaser.Input.Pointer | null, gameObject: Tile) {
@@ -202,6 +213,7 @@ export class GamePlayScene extends Phaser.Scene {
     }
 
     private handleIdleTime(): void {
+        return/*
         if (this.idleTime > IDLE_TIME && this.boardState == BOARD_STATE.IDLE) {
             if (this.firstSelectedTile) {
                 this.firstSelectedTile.unSelectEffect()
@@ -212,7 +224,7 @@ export class GamePlayScene extends Phaser.Scene {
             this.showHint()
         } else {
             this.hideHint()
-        }
+        }*/
     }
 
     private handleHint(): Tile[] {
@@ -449,7 +461,11 @@ export class GamePlayScene extends Phaser.Scene {
         }
     }
 
-    private getRandomShape(): Phaser.Geom.Rectangle | Phaser.Geom.Circle | Phaser.Geom.Ellipse | Phaser.Geom.Triangle {
+    private getRandomShape():
+        | Phaser.Geom.Rectangle
+        | Phaser.Geom.Circle
+        | Phaser.Geom.Ellipse
+        | Phaser.Geom.Triangle {
         const randomNumber = Phaser.Math.Between(0, 5)
         const centerX = this.cameras.main.width / 2
         const centerY = this.cameras.main.height / 2
@@ -463,14 +479,25 @@ export class GamePlayScene extends Phaser.Scene {
             case 3:
                 return new Phaser.Geom.Ellipse(centerX, centerY, 200, 300)
             case 4:
-                return new Phaser.Geom.Triangle(centerX, centerY - 200, centerX - 200, centerY + 200, centerX + 200, centerY + 200)
+                return new Phaser.Geom.Triangle(
+                    centerX,
+                    centerY - 200,
+                    centerX - 200,
+                    centerY + 200,
+                    centerX + 200,
+                    centerY + 200
+                )
             default:
                 return new Phaser.Geom.Rectangle(centerX - 200, centerY - 100, 400, 200)
         }
     }
 
     private getPointFromShape(
-        shape: Phaser.Geom.Rectangle | Phaser.Geom.Circle | Phaser.Geom.Ellipse | Phaser.Geom.Triangle,
+        shape:
+            | Phaser.Geom.Rectangle
+            | Phaser.Geom.Circle
+            | Phaser.Geom.Ellipse
+            | Phaser.Geom.Triangle,
         value: number
     ): Phaser.Geom.Point {
         if (shape instanceof Phaser.Geom.Rectangle)
@@ -480,5 +507,51 @@ export class GamePlayScene extends Phaser.Scene {
         else if (shape instanceof Phaser.Geom.Ellipse)
             return Phaser.Geom.Ellipse.GetPoint(shape, value)
         return Phaser.Geom.Triangle.GetPoint(shape, value)
+    }
+
+    public addStats() {
+        this.stats = document.createElement('span')
+        this.stats.style.position = 'fixed'
+        this.stats.style.left = '0'
+        this.stats.style.bottom = '0'
+        this.stats.style.backgroundColor = 'black'
+        this.stats.style.minWidth = '200px'
+        this.stats.style.padding = '15px'
+
+        this.stats.style.color = 'white'
+        this.stats.style.fontFamily = 'Courier New'
+        this.stats.style.textAlign = 'center'
+        this.stats.innerText = 'Draw calls: ?'
+
+        document.body.append(this.stats)
+    }
+
+    public showDrawCall(): void {
+        const renderer = this.game.renderer
+        if (renderer instanceof Phaser.Renderer.WebGL.WebGLRenderer) {
+            let drawCalls = 0
+
+            const pipelines = renderer.pipelines.pipelines.values()
+
+            renderer.on(Phaser.Renderer.Events.PRE_RENDER, () => (drawCalls = 0))
+            pipelines.forEach((p) =>
+                p.on(Phaser.Renderer.WebGL.Pipelines.Events.AFTER_FLUSH, (e: any) => {
+                    drawCalls++
+                })
+            )
+            renderer.on(Phaser.Renderer.Events.POST_RENDER, () => this.redrawStats(drawCalls))
+        } else {
+            renderer.on(Phaser.Renderer.Events.POST_RENDER, () =>
+                this.redrawStats(renderer.drawCount)
+            )
+        }
+
+        this.events.on('prerender', (e: any) => {
+            //console.log(e)
+        })
+    }
+
+    public redrawStats(drawCalls = 0): void {
+        this.stats.innerText = `Draw calls: ${drawCalls}`
     }
 }
