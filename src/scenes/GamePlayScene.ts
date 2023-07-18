@@ -13,7 +13,7 @@ export enum BOARD_STATE {
     MERGING = 'Merging',
 }
 
-const IS_DEBUG = true
+const IS_DEBUG = false
 const IS_AUTO_PLAY = false
 const IDLE_TIME = 5000
 
@@ -213,7 +213,6 @@ export class GamePlayScene extends Phaser.Scene {
     }
 
     private handleIdleTime(): void {
-        return/*
         if (this.idleTime > IDLE_TIME && this.boardState == BOARD_STATE.IDLE) {
             if (this.firstSelectedTile) {
                 this.firstSelectedTile.unSelectEffect()
@@ -224,7 +223,7 @@ export class GamePlayScene extends Phaser.Scene {
             this.showHint()
         } else {
             this.hideHint()
-        }*/
+        }
     }
 
     private handleHint(): Tile[] {
