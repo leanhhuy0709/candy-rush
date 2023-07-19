@@ -1,7 +1,6 @@
 import { CONST, SCENE } from '../const/const'
 
 export default class MenuScene extends Phaser.Scene {
-    stats: any
     constructor() {
         super({
             key: SCENE.MENU,
@@ -17,9 +16,8 @@ export default class MenuScene extends Phaser.Scene {
     }
 
     public create(): void {
-        this.addStats()
         this.add.image(0, 0, 'bg').setOrigin(0, 0)
-        
+
         this.add.image(470, 200, CONST.candyTypes[0])
         this.add.image(440, 210, CONST.candyTypes[1])
         this.add.image(430, 180, CONST.candyTypes[4])
@@ -123,43 +121,8 @@ export default class MenuScene extends Phaser.Scene {
             },
             this
         )
-        //*/
-    }
-
-    public addStats() {
-		this.stats = document.createElement("span")
-		this.stats.style.position = "fixed"
-		this.stats.style.left = "0"
-		this.stats.style.bottom = "0"
-		this.stats.style.backgroundColor = "black"
-		this.stats.style.minWidth = "200px"
-		this.stats.style.padding = "15px"
-
-		this.stats.style.color = "white"
-		this.stats.style.fontFamily = "Courier New"
-		this.stats.style.textAlign = "center"
-		this.stats.innerText = "Draw calls: ?"
-
-		document.body.append(this.stats)
-	}
-
-    public showDrawCall(): void {
-        const renderer = this.game.renderer
-		if (renderer instanceof Phaser.Renderer.WebGL.WebGLRenderer) {
-			let drawCalls = 0
-
-			const pipelines = renderer.pipelines.pipelines.values()
-
-			renderer.on(Phaser.Renderer.Events.PRE_RENDER, () => (drawCalls = 0))
-			pipelines.forEach((p) => p.on(Phaser.Renderer.WebGL.Pipelines.Events.AFTER_FLUSH, () => drawCalls++))
-			renderer.on(Phaser.Renderer.Events.POST_RENDER, () => this.redrawStats(drawCalls))
-		} else {
-			renderer.on(Phaser.Renderer.Events.POST_RENDER, () => this.redrawStats(renderer.drawCount))
-		}
-    }
-
-    public redrawStats(drawCalls = 0): void {
-        this.stats.innerText = `Draw calls: ${drawCalls}`
+  
+        
     }
 
     public update(): void {
