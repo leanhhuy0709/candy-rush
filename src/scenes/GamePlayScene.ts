@@ -13,7 +13,7 @@ export enum BOARD_STATE {
     MERGING = 'Merging',
 }
 
-const IS_DEBUG = true
+const IS_DEBUG = false
 const IS_AUTO_PLAY = false
 const IDLE_TIME = 5000
 
