@@ -344,6 +344,8 @@ export default class TileManager {
                     if (!firstTile.isMegaTile()) firstTile.setMega()
                 }
 
+                
+
                 cols[index.x]--
 
                 continue
