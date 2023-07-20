@@ -13,8 +13,8 @@ export enum BOARD_STATE {
     MERGING = 'Merging',
 }
 
-const IS_DEBUG = true
-const IS_AUTO_PLAY = false
+const IS_DEBUG = false
+const IS_AUTO_PLAY = true
 const IDLE_TIME = 1000
 
 export class GamePlayScene extends Phaser.Scene {
@@ -75,7 +75,7 @@ export class GamePlayScene extends Phaser.Scene {
     public debugConsole(): void {
         if (!IS_DEBUG) return
         //console something you want
-        //console.log(this.children.list.map(x=>(x as Phaser.GameObjects.Image).texture))
+        console.log(this.children.list)
         this.countDrawCalls()
     }
 
@@ -88,7 +88,7 @@ export class GamePlayScene extends Phaser.Scene {
     }
 
     public create() {
-        this.addStats()
+        //this.addStats()
 
         this.add.image(0, 0, 'bg').setOrigin(0, 0)
         ParticleEmitterPool.init(this)

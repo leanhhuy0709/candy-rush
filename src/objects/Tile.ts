@@ -22,7 +22,7 @@ export class Tile extends Phaser.GameObjects.Image {
     public constructor(aParams: IImageConstructor, gridX: number, gridY: number) {
         super(aParams.scene, aParams.x, aParams.y, aParams.texture, aParams.frame)
 
-        this.setOrigin(0.5, 0.5).setInteractive().setDepth(5)
+        this.setOrigin(0.5, 0.5).setInteractive().setDepth(1)
 
         this.gridX = gridX
         this.gridY = gridY
@@ -33,7 +33,7 @@ export class Tile extends Phaser.GameObjects.Image {
             .setVisible(false)
             .setDepth(4)
         this.graphics.strokeRoundedRect(0, 0, this.width + 2, this.height)
-        this.setGraphics()*/
+        this.setGraphifcs()*/
 
         this.scene.add.existing(this)
 
@@ -305,7 +305,7 @@ export class Tile extends Phaser.GameObjects.Image {
                     blendMode: 'ADD',
                 }
             )
-                .setDepth(3)
+                .setDepth(5)
                 .start()
         }
     }
@@ -333,7 +333,7 @@ export class Tile extends Phaser.GameObjects.Image {
                     blendMode: 'ADD',
                 }
             )
-                .setDepth(3)
+                .setDepth(5)
                 .start()
         }
     }
