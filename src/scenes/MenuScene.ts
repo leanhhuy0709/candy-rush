@@ -1,4 +1,4 @@
-import { CONST, SCENE } from '../const/const'
+import { SCENE } from '../const/const'
 
 export default class MenuScene extends Phaser.Scene {
     constructor() {
@@ -15,14 +15,14 @@ export default class MenuScene extends Phaser.Scene {
         )
     }
 
-    public create(): void {
+    public create(): void {    
         this.add.image(0, 0, 'bg').setOrigin(0, 0)
 
-        this.add.image(470, 200, CONST.candyTypes[0])
-        this.add.image(440, 210, CONST.candyTypes[1])
-        this.add.image(430, 180, CONST.candyTypes[4])
-        this.add.image(180, 170, CONST.candyTypes[3])
-        this.add.image(300, 220, CONST.candyTypes[2])
+        this.add.image(470, 200, 'candy', 0)
+        this.add.image(440, 210, 'candy', 1)
+        this.add.image(430, 180, 'candy', 4)
+        this.add.image(180, 170, 'candy', 3)
+        this.add.image(300, 220, 'candy', 2)
 
         this.add
             .text(this.cameras.main.width / 2, 200, 'CANDY CRUSH', {
@@ -121,8 +121,8 @@ export default class MenuScene extends Phaser.Scene {
             },
             this
         )
-  
-        
+
+        //const a = this.add.image(100, 100, 'candy', 4)
     }
 
     public update(): void {

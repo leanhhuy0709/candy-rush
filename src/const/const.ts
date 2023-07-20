@@ -5,21 +5,7 @@ export const CONST = {
     gridHeight: 8,
     tileWidth: 64,
     tileHeight: 72,
-    margin: 10,
-    candyTypes: [
-        'cookie1',
-        'cookie2',
-        'croissant',
-        'cupcake',
-        'donut',
-        'eclair',
-        'macaroon',
-        'pie',
-        'poptart1',
-        'poptart2',
-        'starcookie1',
-        'starcookie2'
-    ],
+    margin: 10
 }
 
 export enum SCENE {

@@ -13,6 +13,11 @@ export class LoadingScene extends Phaser.Scene {
 
         // load out package
         this.load.pack('preload', './assets/pack.json', 'preload')
+
+        this.load.spritesheet("candy", './assets/images/spritesheet.png', {
+            frameWidth: 64,
+            frameHeight: 72,
+        })
     }
 
     update(): void {

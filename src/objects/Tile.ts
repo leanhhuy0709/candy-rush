@@ -89,7 +89,7 @@ export class Tile extends Phaser.GameObjects.Image {
     }
 
     public getKey(): string {
-        return this.texture.key
+        return this.frame.name
     }
 
     public selectEffect(): void {

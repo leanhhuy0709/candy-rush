@@ -13,9 +13,9 @@ export enum BOARD_STATE {
     MERGING = 'Merging',
 }
 
-const IS_DEBUG = false
+const IS_DEBUG = true
 const IS_AUTO_PLAY = false
-const IDLE_TIME = 5000
+const IDLE_TIME = 1000
 
 export class GamePlayScene extends Phaser.Scene {
     private firstSelectedTile: Tile | null
@@ -31,11 +31,55 @@ export class GamePlayScene extends Phaser.Scene {
     public boardState: BOARD_STATE
     public scoreBoard: ScoreBoard
 
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    stats: any
+
+    addStats() {
+		this.stats = document.createElement("span")
+		this.stats.style.position = "fixed"
+		this.stats.style.left = "0"
+		this.stats.style.bottom = "0"
+		this.stats.style.backgroundColor = "black"
+		this.stats.style.minWidth = "200px"
+		this.stats.style.padding = "15px"
+
+		this.stats.style.color = "white"
+		this.stats.style.fontFamily = "Courier New"
+		this.stats.style.textAlign = "center"
+		this.stats.innerText = "Draw calls: ?"
+
+		document.body.append(this.stats)
+	}
+
+    countDrawCalls() {
+		const renderer = this.game.renderer
+		if (renderer instanceof Phaser.Renderer.WebGL.WebGLRenderer) {
+			let drawCalls = 0
+
+			const pipelines = renderer.pipelines.pipelines.values()
+
+			renderer.on(Phaser.Renderer.Events.PRE_RENDER, () => (drawCalls = 0))
+			pipelines.forEach((p) => p.on(Phaser.Renderer.WebGL.Pipelines.Events.AFTER_FLUSH, () => drawCalls++))
+			renderer.on(Phaser.Renderer.Events.POST_RENDER, () => this.redrawStats(drawCalls))
+		} else {
+			renderer.on(Phaser.Renderer.Events.POST_RENDER, () => this.redrawStats(renderer.drawCount))
+		}
+	}
+
+	redrawStats(drawCalls = 0) {
+		this.stats.innerText = `Draw calls: ${drawCalls}`
+	}
+
+
     public debugConsole(): void {
         if (!IS_DEBUG) return
         //console something you want
-        console.log(this.children)
+        //console.log(this.children.list.map(x=>(x as Phaser.GameObjects.Image).texture))
+        this.countDrawCalls()
     }
+
+
 
     public constructor() {
         super({
@@ -44,6 +88,7 @@ export class GamePlayScene extends Phaser.Scene {
     }
 
     public create() {
+        this.addStats()
 
         this.add.image(0, 0, 'bg').setOrigin(0, 0)
         ParticleEmitterPool.init(this)
@@ -414,7 +459,7 @@ export class GamePlayScene extends Phaser.Scene {
         for (let i = 0; i < CONST.gridHeight; i++) {
             for (let j = 0; j < CONST.gridWidth; j++) {
                 const tile = this.tileManager.getTile(i, j) as Tile
-                tile.setTexture(this.tileManager.getRandomCandyKey(tile.gridX, tile.gridY))
+                tile.setTexture('candy', this.tileManager.getRandomFrame(tile.gridX, tile.gridY))
 
                 const temp = {
                     value: (i * CONST.gridHeight + j) / (CONST.gridHeight * CONST.gridWidth),

@@ -3,7 +3,7 @@ import { BOARD_STATE, GamePlayScene } from '../scenes/GamePlayScene'
 import ScoreBoard from './ScoreBoard'
 import { Tile } from './Tile'
 
-const SIMILAR_CANDY_CHANCE = 0.33
+const SIMILAR_CANDY_CHANCE = 0.333
 
 const GRID_HEIGHT_RELATIVE_TOP = 3
 
@@ -14,7 +14,6 @@ export default class TileManager {
     private tileMap: Map<string, Tile>
 
     private numCandy: number
-    private candyList: string[] = []
 
     public constructor(scene: GamePlayScene) {
         this.scene = scene
@@ -22,10 +21,6 @@ export default class TileManager {
         this.tileMap = new Map<string, Tile>()
 
         this.numCandy = NUM_CANDY
-        for (let i = 0; i < this.numCandy; i++) {
-            this.candyList.push(CONST.candyTypes[i])
-        }
-        this.shuffleCandyList()
 
         for (let i = 0; i < CONST.gridHeight; i++) {
             for (let j = 0; j < CONST.gridWidth; j++) {
@@ -37,7 +32,8 @@ export default class TileManager {
                             scene: this.scene,
                             x: this.scene.cameras.main.width / 2,
                             y: this.scene.cameras.main.height / 2,
-                            texture: this.getRandomCandyKey(),
+                            texture: 'candy',
+                            frame: 0,
                         },
                         i,
                         j
@@ -71,13 +67,7 @@ export default class TileManager {
         for (let i = 0; i < this.numCandy; i++) this.candyList[i] = CONST.candyTypes[randList[i]]*/
     }
 
-    public getRandomCandyKey(x?: number, y?: number): string {
-        if (x && y) {
-            if (Math.random() < SIMILAR_CANDY_CHANCE) return this.getSimilarCandyKey(x, y)
-        }
-        return this.candyList[Phaser.Math.Between(0, this.candyList.length - 1)]
-    }
-
+    /*
     public getSimilarCandyKey(x: number, y: number): string {
         const listCandyNextTo = []
         if (this.getTile(x - 1, y)) listCandyNextTo.push(this.getTile(x - 1, y))
@@ -89,7 +79,7 @@ export default class TileManager {
                 listCandyNextTo[Phaser.Math.Between(0, listCandyNextTo.length - 1)] as Tile
             ).getKey()
         return this.getRandomCandyKey()
-    }
+    }*/
 
     public getTileMap(): Map<string, Tile> {
         return this.tileMap
@@ -344,8 +334,6 @@ export default class TileManager {
                     if (!firstTile.isMegaTile()) firstTile.setMega()
                 }
 
-                
-
                 cols[index.x]--
 
                 continue
@@ -404,7 +392,9 @@ export default class TileManager {
                 if (tile) {
                     if (num > 0) {
                         if (j < 0)
-                            tile.setTexture(this.getRandomCandyKey()).setVisible(true).setAngle(0)
+                            tile.setTexture('candy', this.getRandomFrame())
+                                .setVisible(true)
+                                .setAngle(0)
 
                         tile.setGrid(this, undefined, j + num)
 
@@ -449,5 +439,24 @@ export default class TileManager {
             default:
                 return { x: parseInt(key[0] + key[1]), y: parseInt(key[2] + key[3]) }
         }
+    }
+
+    public getRandomFrame(x?: number, y?: number): number {
+        if (x == undefined || y == undefined) return Phaser.Math.Between(0, this.numCandy - 1)
+
+        if (Math.random() < SIMILAR_CANDY_CHANCE) {
+            const listCandyNextTo = []
+            if (this.getTile(x - 1, y)) listCandyNextTo.push(this.getTile(x - 1, y))
+            if (this.getTile(x + 1, y)) listCandyNextTo.push(this.getTile(x + 1, y))
+            if (this.getTile(x, y - 1)) listCandyNextTo.push(this.getTile(x, y - 1))
+            if (this.getTile(x, y + 1)) listCandyNextTo.push(this.getTile(x, y + 1))
+            if (listCandyNextTo.length > 0)
+                return Number(
+                    (
+                        listCandyNextTo[Phaser.Math.Between(0, listCandyNextTo.length - 1)] as Tile
+                    ).getKey()
+                )
+        }
+        return Phaser.Math.Between(0, this.numCandy - 1)
     }
 }
