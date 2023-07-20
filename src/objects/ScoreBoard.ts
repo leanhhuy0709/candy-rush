@@ -92,7 +92,7 @@ export default class ScoreBoard {
                 blendMode: 'ADD',
             }
         )
-            .setDepth(2)
+            .setDepth(6)
             .start()
 
         this.progressBar = this.scene.add.rectangle(

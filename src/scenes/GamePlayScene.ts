@@ -14,8 +14,8 @@ export enum BOARD_STATE {
 }
 
 const IS_DEBUG = false
-const IS_AUTO_PLAY = true
-const IDLE_TIME = 1000
+const IS_AUTO_PLAY = false
+const IDLE_TIME = 5000
 
 export class GamePlayScene extends Phaser.Scene {
     private firstSelectedTile: Tile | null
@@ -88,7 +88,7 @@ export class GamePlayScene extends Phaser.Scene {
     }
 
     public create() {
-        //this.addStats()
+        if (IS_DEBUG) this.addStats()
 
         this.add.image(0, 0, 'bg').setOrigin(0, 0)
         ParticleEmitterPool.init(this)

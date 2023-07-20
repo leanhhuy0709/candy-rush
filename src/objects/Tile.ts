@@ -58,7 +58,11 @@ export class Tile extends Phaser.GameObjects.Image {
     }
 
     public spin(): void {
-        this.tween.resume()
+        if (this.tween.isPaused()) {
+            this.tween.restart()
+
+            this.tween.resume()
+        }
     }
 
     public unSpin(): void {
@@ -230,8 +234,7 @@ export class Tile extends Phaser.GameObjects.Image {
                 gravityY: 150,
                 blendMode: 'ADD',
                 emitting: false,
-            })
-                .setDepth(6)
+            }).setDepth(6)
             emitter.explode(16)
 
             setTimeout(() => {
@@ -246,8 +249,7 @@ export class Tile extends Phaser.GameObjects.Image {
                 gravityY: 150,
                 blendMode: 'ADD',
                 emitting: false,
-            })
-                .setDepth(6)
+            }).setDepth(6)
             emitter.explode(16)
 
             setTimeout(() => {
@@ -259,21 +261,15 @@ export class Tile extends Phaser.GameObjects.Image {
     public static bigBoom(): void {
         if (Tile.boomFlag <= LIMIT_BOOM) return
 
-        const emitter = ParticleEmitterPool.getExplodeEmitter(
-            300,
-            400,
-            'flares',
-            {
-                frame: ['red', 'blue'],
-                lifespan: 1000,
-                speed: { min: 350, max: 450 },
-                scale: { start: 0.75, end: 0 },
-                gravityY: 150,
-                blendMode: 'ADD',
-                emitting: false,
-            }
-        )
-            .setDepth(6)
+        const emitter = ParticleEmitterPool.getExplodeEmitter(300, 400, 'flares', {
+            frame: ['red', 'blue'],
+            lifespan: 1000,
+            speed: { min: 350, max: 450 },
+            scale: { start: 0.75, end: 0 },
+            gravityY: 150,
+            blendMode: 'ADD',
+            emitting: false,
+        }).setDepth(6)
         emitter.explode(50)
 
         setTimeout(() => {
