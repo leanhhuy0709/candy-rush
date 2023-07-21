@@ -60,7 +60,6 @@ export class Tile extends Phaser.GameObjects.Image {
     public spin(): void {
         if (this.tween.isPaused()) {
             this.tween.restart()
-
             this.tween.resume()
         }
     }
@@ -70,7 +69,7 @@ export class Tile extends Phaser.GameObjects.Image {
         const tween = this.scene.tweens.add({
             targets: this,
             angle: 0,
-            duration: 800,
+            duration: Math.abs(this.angle) * 800/300,
             ease: 'Linear',
             onComplete: () => tween.destroy(),
         })
@@ -173,13 +172,14 @@ export class Tile extends Phaser.GameObjects.Image {
         time?: number,
         onCompleteAll?: Function
     ): void {
+        if (!time) time = 500
         Tile.numTweenRunning++
         const tween = this.scene.tweens.add({
             targets: this,
             x: x,
             y: y,
             delay: delay,
-            duration: 500,
+            duration: time,
             ease: Phaser.Math.Easing.Quintic.Out,
             onComplete: () => {
                 Tile.numTweenRunning--
@@ -199,7 +199,7 @@ export class Tile extends Phaser.GameObjects.Image {
                 x: x,
                 y: y + 10,
                 delay: delay,
-                duration: 500,
+                duration: time,
                 ease: Phaser.Math.Easing.Bounce.Out,
                 onComplete: () => tween.destroy(),
             })
