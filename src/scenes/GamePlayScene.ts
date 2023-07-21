@@ -75,7 +75,7 @@ export class GamePlayScene extends Phaser.Scene {
     public debugConsole(): void {
         if (!IS_DEBUG) return
         //console something you want
-        console.log(this.children.list)
+        //console.log(this.children.list)
         this.countDrawCalls()
     }
 
@@ -422,6 +422,14 @@ export class GamePlayScene extends Phaser.Scene {
 
     private showHint(): void {
         const listTile = this.handleHint()
+        //const listTile = this.tileManager.findBestMove()
+
+        /*if (listTile[0] === undefined || listTile[1] === undefined) {
+            this.shuffle()
+            return
+        }*/
+
+        
         if (listTile.length == 0) {
             this.shuffle()
             return

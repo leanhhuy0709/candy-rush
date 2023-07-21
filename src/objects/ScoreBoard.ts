@@ -204,11 +204,13 @@ export default class ScoreBoard {
         if (percent <= 0.05) percent = 0.05
         if (percent > 1) percent = 1
 
+        const d = Math.sqrt((progressBarX + percent * progressBarWidth - x)**2 + (progressBarY + progressBarHeight - y)**2)
+
         const tween = this.scene.tweens.add({
             targets: tempObj,
             x: progressBarX + percent * progressBarWidth,
             y: progressBarY + progressBarHeight,
-            duration: 1000,
+            duration: d * 2,
             onComplete: () => {
                 tempObj.destroy()
                 emitter.setX(0)

@@ -459,4 +459,199 @@ export default class TileManager {
         }
         return Phaser.Math.Between(0, this.numCandy - 1)
     }
+
+    public findBestMove(): (Tile | undefined)[] {
+        const result: (Tile | undefined)[] = [undefined, undefined]
+
+        let maxValue = 0
+
+        for (let i = 0; i < CONST.gridHeight; i++) {
+            for (let j = 0; j < CONST.gridWidth; j++) {
+                const tile1 = this.getTile(i, j) as Tile
+                const tile2 = this.getTile(i, j + 1)
+                const tile3 = this.getTile(i, j + 2)
+
+                if (!tile1) console.log('Error index tile!')
+                if (!tile2 || !tile3) continue
+
+                if (tile1.getKey() == tile2.getKey()) {
+                    // X
+                    // X
+                    //X0X
+                    // X
+                    const tileLeft = this.getTile(i - 1, j + 2)
+                    const tileRight = this.getTile(i + 1, j + 2)
+                    const tileBot = this.getTile(i, j + 3)
+
+                    if (tileLeft && tileLeft.getKey() == tile1.getKey()) {
+                        const value = this.countComboDFSIfMove(tileLeft, tile3)
+                        if (value > maxValue) {
+                            maxValue = value
+                            result[0] = tile3
+                            result[1] = tileLeft
+                        }
+                    } else if (tileRight && tileRight.getKey() == tile1.getKey()) {
+                        const value = this.countComboDFSIfMove(tileRight, tile3)
+                        if (value > maxValue) {
+                            maxValue = value
+                            result[0] = tile3
+                            result[1] = tileRight
+                        }
+                    } else if (tileBot && tileBot.getKey() == tile1.getKey()) {
+                        const value = this.countComboDFSIfMove(tileBot, tile3)
+                        if (value > maxValue) {
+                            maxValue = value
+                            result[0] = tile3
+                            result[1] = tileBot
+                        }
+                    }
+                }
+
+                if (tile1.getKey() == tile3.getKey()) {
+                    // X
+                    //X0X
+                    // X
+                    const tileLeft = this.getTile(i - 1, j + 1)
+                    const tileRight = this.getTile(i + 1, j + 1)
+
+                    if (tileLeft && tileLeft.getKey() == tile1.getKey()) {
+                        const value = this.countComboDFSIfMove(tileLeft, tile2)
+                        if (value > maxValue) {
+                            maxValue = value
+                            result[0] = tile2
+                            result[1] = tileLeft
+                        }
+                    } else if (tileRight && tileRight.getKey() == tile1.getKey()) {
+                        const value = this.countComboDFSIfMove(tile3, tileRight)
+                        if (value > maxValue) {
+                            maxValue = value
+                            result[0] = tile2
+                            result[1] = tileRight
+                        }
+                    }
+                }
+            }
+        }
+
+        for (let i = 0; i < CONST.gridWidth; i++) {
+            for (let j = 0; j < CONST.gridHeight; j++) {
+                const tile1 = this.getTile(i, j) as Tile
+                const tile2 = this.getTile(i + 1, j)
+                const tile3 = this.getTile(i + 2, j)
+
+                if (!tile1) console.log('Error index tile!')
+                if (!tile2 || !tile3) continue
+
+                if (tile1.getKey() == tile2.getKey()) {
+                    // X
+                    // X
+                    //X0X
+                    // X
+                    const tileLeft = this.getTile(i + 2, j - 1)
+                    const tileRight = this.getTile(i + 2, j + 1)
+                    const tileBot = this.getTile(i + 3, j)
+
+                    if (tileLeft && tileLeft.getKey() == tile1.getKey()) {
+                        const value = this.countComboDFSIfMove(tileLeft, tile3)
+                        if (value > maxValue) {
+                            maxValue = value
+                            result[0] = tile3
+                            result[1] = tileLeft
+                        }
+                    } else if (tileRight && tileRight.getKey() == tile1.getKey()) {
+                        const value = this.countComboDFSIfMove(tileRight, tile3)
+                        if (value > maxValue) {
+                            maxValue = value
+                            result[0] = tile3
+                            result[1] = tileRight
+                        }
+                    } else if (tileBot && tileBot.getKey() == tile1.getKey()) {
+                        const value = this.countComboDFSIfMove(tileBot, tile3)
+                        if (value > maxValue) {
+                            maxValue = value
+                            result[0] = tile3
+                            result[1] = tileBot
+                        }
+                    }
+                }
+
+                if (tile1.getKey() == tile3.getKey()) {
+                    // X
+                    //X0X
+                    // X
+                    const tileLeft = this.getTile(i + 1, j - 1)
+                    const tileRight = this.getTile(i + 1, j + 1)
+
+                    if (tileLeft && tileLeft.getKey() == tile1.getKey()) {
+                        const value = this.countComboDFSIfMove(tileLeft, tile2)
+                        if (value > maxValue) {
+                            maxValue = value
+                            result[0] = tile2
+                            result[1] = tileLeft
+                        }
+                    } else if (tileRight && tileRight.getKey() == tile1.getKey()) {
+                        const value = this.countComboDFSIfMove(tile3, tileRight)
+                        if (value > maxValue) {
+                            maxValue = value
+                            result[0] = tile2
+                            result[1] = tileRight
+                        }
+                    }
+                }
+            }
+        }
+
+        console.log(maxValue)
+
+        return result
+    }
+
+    public countComboDFSIfMove(tile1: Tile, tile2: Tile): number {
+        const queue: Tile[] = []
+        const x1 = tile1.gridX,
+            y1 = tile1.gridY
+        const x2 = tile2.gridX,
+            y2 = tile2.gridY
+
+        const visited: Map<string, boolean> = new Map<string, boolean>()
+
+        const directs = [
+            { x: 0, y: 1 },
+            { x: 0, y: -1 },
+            { x: 1, y: 0 },
+            { x: -1, y: 0 },
+        ]
+
+        for (const d of directs) {
+            const tile = this.getTile(x2 + d.x, y2 + d.y)
+            if (tile && tile.getKey() == tile1.getKey()) {
+                queue.push(tile)
+                visited.set(this.convertToKey(x2 + d.x, y2 + d.y), true)
+            }
+        }
+
+        queue.push(tile1)
+        visited.set(this.convertToKey(x1, y1), true)
+
+        let count = 0
+
+        console.log(queue.map(x => [x.gridX, x.gridY]))
+
+        while (queue.length > 0) {
+            const tile = queue.pop() as Tile
+            count++
+
+            for (const d of directs) {
+                const tileNext = this.getTile(tile.gridX + d.x, tile.gridY + d.y)
+                if (tileNext && tileNext.getKey() == tile.getKey()) {
+                    if (!visited.get(this.convertToKey(tileNext.gridX, tileNext.gridY))) {
+                        queue.push(tileNext)
+                        visited.set(this.convertToKey(tileNext.gridX, tileNext.gridY), true)
+                    }
+                }
+            }
+        }
+
+        return count
+    }
 }

@@ -180,7 +180,7 @@ export class Tile extends Phaser.GameObjects.Image {
             y: y,
             delay: delay,
             duration: 500,
-            ease: 'Power2',
+            ease: Phaser.Math.Easing.Quintic.Out,
             onComplete: () => {
                 Tile.numTweenRunning--
                 if (onComplete) {
