@@ -458,7 +458,10 @@ export class GamePlayScene extends Phaser.Scene {
     }
 
     public shuffle(): void {
-        this.shuffle3D()
+        const randomValue = Math.random()
+        if (randomValue <= 0.33) this.shuffle3D_2()
+        else if (randomValue <= 0.66) this.shuffle3D_3()
+        else this.shuffle3D()
         /*
         this.boardState = BOARD_STATE.HANDLING
 
@@ -569,11 +572,6 @@ export class GamePlayScene extends Phaser.Scene {
         let check = true
 
         const shape = new Phaser.Geom.Ellipse(centerX, centerY, width, height)
-        console.log(this.getPointFromShape(shape, 0))
-        console.log(this.getPointFromShape(shape, 0.25))
-        console.log(this.getPointFromShape(shape, 0.5))
-        console.log(this.getPointFromShape(shape, 0.75))
-        console.log(this.getPointFromShape(shape, 1))
 
         this.tileManager.shuffleCandyList()
 
@@ -593,9 +591,7 @@ export class GamePlayScene extends Phaser.Scene {
                     const tween = this.tweens.add({
                         targets: temp,
                         test: 0,
-                        //value:
-                            //(i * CONST.gridHeight + j) / (CONST.gridHeight * CONST.gridWidth) + 1,
-                        duration: 1500,
+                        duration: 3000,
                         ease: 'Linear',
                         onComplete: () => {
                             this.tileManager.getTile(i, j)?.updatePositon(
@@ -622,15 +618,14 @@ export class GamePlayScene extends Phaser.Scene {
                                 else if (0.5 <= val && val < 0.75) tmp = val
                                 else if (0.75 <= val && val <= 1) tmp = val
                                 tile.setFlipX(true)
-                            }
-                            else {
+                            } else {
                                 if (0 <= val && val < 0.25) tmp = val
                                 else if (0.25 <= val && val < 0.5) tmp = 1 - val
                                 else if (0.5 <= val && val < 0.75) tmp = 1 - val
                                 else if (0.75 <= val && val <= 1) tmp = 1 - val
                                 tile.setFlipX(false)
                             }
-                            let val2 = (1 - Math.abs(shape.width)/width) * 1.5
+                            let val2 = (1 - Math.abs(shape.width) / width) * 1.5
                             if (val2 >= 1) val2 = 1
                             else if (val2 <= 0.1) val2 = 0.1
                             tile.scaleX = val2
@@ -664,16 +659,17 @@ export class GamePlayScene extends Phaser.Scene {
         const centerX = this.cameras.main.width / 2
         const centerY = this.cameras.main.height / 2
 
-        const width = 400
-        const height = 400
-        let step = -0.1
+        const point1 = { x: centerX, y: centerY - 200 }
+        const point2 = { x: centerX - 200, y: centerY + 200 }
+        const point3 = { x: centerX + 200, y: centerY + 200 }
+        const point4 = { x: centerX, y: centerY + 100 }
 
-        const shape = new Phaser.Geom.Ellipse(centerX, centerY, width, height)
-        console.log(this.getPointFromShape(shape, 0))
-        console.log(this.getPointFromShape(shape, 0.25))
-        console.log(this.getPointFromShape(shape, 0.5))
-        console.log(this.getPointFromShape(shape, 0.75))
-        console.log(this.getPointFromShape(shape, 1))
+        const line1 = new Phaser.Geom.Line(point2.x, point2.y, point4.x, point4.y)
+        const line2 = new Phaser.Geom.Line(point4.x, point4.y, point3.x, point3.y)
+        const line3 = new Phaser.Geom.Line(point3.x, point3.y, point2.x, point2.y)
+        const line4 = new Phaser.Geom.Line(point2.x, point2.y, point1.x, point1.y)
+        const line5 = new Phaser.Geom.Line(point1.x, point1.y, point3.x, point3.y)
+        const line6 = new Phaser.Geom.Line(point1.x, point1.y, point4.x, point4.y)
 
         this.tileManager.shuffleCandyList()
 
@@ -687,15 +683,35 @@ export class GamePlayScene extends Phaser.Scene {
                     test: 5000,
                 }
 
-                const point = this.getPointFromShape(shape, temp.value)
+                let point = { x: 0, y: 0 }
+
+                if (temp.value <= 1.0 / 6) {
+                    point = line1.getPoint(temp.value * 6)
+                    tile.setDepth(1)
+                } else if (temp.value <= 2.0 / 6) {
+                    point = line2.getPoint((temp.value - 1 / 6) * 6)
+                    tile.setDepth(1.2)
+                } else if (temp.value <= 3.0 / 6) {
+                    point = line3.getPoint((temp.value - 2 / 6) * 6)
+                    tile.setDepth(1.4)
+                } else if (temp.value <= 4.0 / 6) {
+                    point = line4.getPoint((temp.value - 3 / 6) * 6)
+                    tile.setDepth(1.5)
+                } else if (temp.value <= 5.0 / 6) {
+                    point = line5.getPoint((temp.value - 4 / 6) * 6)
+                    tile.setDepth(1.6)
+                } else {
+                    point = line6.getPoint((temp.value - 5 / 6) * 6)
+                    tile.setDepth(0.9)
+                }
 
                 tile.goToPosition(point.x, point.y, () => {
                     const tween = this.tweens.add({
                         targets: temp,
                         test: 0,
-                        //value:
-                            //(i * CONST.gridHeight + j) / (CONST.gridHeight * CONST.gridWidth) + 1,
-                        duration: 5000,
+                        value:
+                            (i * CONST.gridHeight + j) / (CONST.gridHeight * CONST.gridWidth) + 1,
+                        duration: 2000,
                         ease: 'Linear',
                         onComplete: () => {
                             this.tileManager.getTile(i, j)?.updatePositon(
@@ -710,32 +726,189 @@ export class GamePlayScene extends Phaser.Scene {
                             tween.destroy()
                         },
                         onUpdate: () => {
-                            shape.width += step
-
                             let val = temp.value
                             if (val > 1) val -= 1
 
-                            let tmp = 0
-                            if (0 <= val && val < 0.25) tmp = 1 - val
-                            else if (0.25 <= val && val < 0.5) tmp = val
-                            else if (0.5 <= val && val < 0.75) tmp = val
-                            else if (0.75 <= val && val <= 1) tmp = val
+                            let point = { x: 0, y: 0 }
 
-                            tile.setDepth(1 + tmp)
-
-                            if (shape.width <= -width) {
-                                step = 0.1
+                            if (val <= 1.0 / 6) {
+                                point = line1.getPoint(val * 6)
+                                tile.setDepth(1)
+                            } else if (val <= 2.0 / 6) {
+                                point = line2.getPoint((val - 1 / 6) * 6)
+                                tile.setDepth(1.2)
+                            } else if (val <= 3.0 / 6) {
+                                point = line3.getPoint((val - 2 / 6) * 6)
+                                tile.setDepth(1.4)
+                            } else if (val <= 4.0 / 6) {
+                                point = line4.getPoint((val - 3 / 6) * 6)
+                                tile.setDepth(1.5)
+                            } else if (val <= 5.0 / 6) {
+                                point = line5.getPoint((val - 4 / 6) * 6)
+                                tile.setDepth(1.6)
+                            } else {
+                                point = line6.getPoint((val - 5 / 6) * 6)
+                                tile.setDepth(0.9)
                             }
-                            if (shape.width >= width) {
-                                step = -0.1
-                            }
 
-                            const point = this.getPointFromShape(shape, val)
                             tile.x = point.x
                             tile.y = point.y
                             tile.updateSuperEmitterPosition()
                         },
-                        repeat: -1,
+                        repeat: 1,
+                    })
+                })
+            }
+        }
+    }
+
+    public shuffle3D_3(): void {
+        this.boardState = BOARD_STATE.HANDLING
+
+        const centerX = this.cameras.main.width / 2
+        const centerY = this.cameras.main.height / 2
+
+        const point1 = { x: centerX, y: centerY }
+        const point2 = { x: centerX - 200, y: centerY - 200 }
+        const point3 = { x: centerX + 200, y: centerY - 200 }
+        const point4 = { x: centerX + 200, y: centerY + 200 }
+        const point5 = { x: centerX - 200, y: centerY + 200 }
+        const R = Math.sqrt((point1.x - point2.x) ** 2 + (point1.y - point2.y) ** 2)
+
+        const line1 = new Phaser.Geom.Line(point2.x, point2.y, point4.x, point4.y)
+        const line2 = new Phaser.Geom.Line(point3.x, point3.y, point5.x, point5.y)
+        const shape = new Phaser.Geom.Circle(point1.x, point1.y, R)
+
+        const data = [R, (R / 2) * Math.PI, 2 * R, (R / 2) * Math.PI, R]
+        let sum = 0
+        for (let i = 0; i < data.length; i++) sum += data[i]
+        for (let i = 0; i < data.length; i++) {
+            if (i > 0) data[i] = data[i] / sum + data[i - 1]
+            else data[i] /= sum
+        }
+
+        this.tileManager.shuffleCandyList()
+
+        for (let i = 0; i < CONST.gridHeight; i++) {
+            for (let j = 0; j < CONST.gridWidth; j++) {
+                const tile = this.tileManager.getTile(i, j) as Tile
+                tile.setTexture('candy', this.tileManager.getRandomFrame(tile.gridX, tile.gridY))
+
+                const temp = {
+                    value: (i * CONST.gridHeight + j) / (CONST.gridHeight * CONST.gridWidth),
+                    test: 5000,
+                }
+                let point = { x: 0, y: 0 }
+                let k = 0,
+                    prev = 0
+                for (; k < data.length; k++) {
+                    if (k > 0) prev = data[k - 1]
+                    if (temp.value <= data[k]) {
+                        break
+                    }
+                }
+                switch (k) {
+                    case 0:
+                        point = line2.getPoint((1 - (temp.value - prev) / (data[k] - prev)) * 0.5)
+                        tile.setDepth(temp.value)
+                        break
+                    case 1:
+                        // 7/8 - 5/8
+                        point = shape.getPoint(
+                            ((1 - (temp.value - prev) / (data[k] - prev)) * 2) / 8 + 5 / 8
+                        )
+                        tile.setDepth(temp.value)
+                        break
+                    case 2:
+                        point = line1.getPoint((temp.value - prev) / (data[k] - prev))
+                        tile.setDepth(temp.value)
+                        break
+                    case 3:
+                        // 1/8 - 3/8
+                        point = shape.getPoint(
+                            (((temp.value - prev) / (data[k] - prev)) * 2) / 8 + 1 / 8
+                        )
+                        tile.setDepth(temp.value)
+                        break
+                    default:
+                        point = line2.getPoint(
+                            (1 - (temp.value - prev) / (data[k] - prev)) * 0.5 + 0.5
+                        )
+                        tile.setDepth(temp.value)
+                        break
+                }
+
+                tile.goToPosition(point.x, point.y, () => {
+                    const tween = this.tweens.add({
+                        targets: temp,
+                        test: 0,
+                        value:
+                            (i * CONST.gridHeight + j) / (CONST.gridHeight * CONST.gridWidth) + 1,
+                        duration: 4000,
+                        ease: 'Linear',
+                        onComplete: () => {
+                            this.tileManager.getTile(i, j)?.updatePositon(
+                                true,
+                                () => {
+                                    this.tileManager.shuffleCandyList()
+                                    this.boardState = BOARD_STATE.IDLE
+                                    this.handleMatch()
+                                },
+                                Phaser.Math.Between(0, 500)
+                            )
+                            tween.destroy()
+                        },
+                        onUpdate: () => {
+                            let val = temp.value
+                            if (val > 1) val -= 1
+                            let k = 0,
+                                prev = 0
+                            for (; k < data.length; k++) {
+                                if (k > 0) prev = data[k - 1]
+                                if (val <= data[k]) {
+                                    break
+                                }
+                            }
+
+                            let point = { x: 0, y: 0 }
+                            switch (k) {
+                                case 0:
+                                    point = line2.getPoint(
+                                        (1 - (val - prev) / (data[k] - prev)) * 0.5
+                                    )
+                                    tile.setDepth(val)
+                                    break
+                                case 1:
+                                    // 7/8 - 5/8
+                                    point = shape.getPoint(
+                                        ((1 - (val - prev) / (data[k] - prev)) * 2) / 8 + 5 / 8
+                                    )
+                                    tile.setDepth(val)
+                                    break
+                                case 2:
+                                    point = line1.getPoint((val - prev) / (data[k] - prev))
+                                    tile.setDepth(val)
+                                    break
+                                case 3:
+                                    // 1/8 - 3/8
+                                    point = shape.getPoint(
+                                        (((val - prev) / (data[k] - prev)) * 2) / 8 + 1 / 8
+                                    )
+                                    tile.setDepth(val)
+                                    break
+                                default:
+                                    point = line2.getPoint(
+                                        (1 - (val - prev) / (data[k] - prev)) * 0.5 + 0.5
+                                    )
+                                    tile.setDepth(val)
+                                    break
+                            }
+
+                            tile.x = point.x
+                            tile.y = point.y
+                            tile.updateSuperEmitterPosition()
+                        },
+                        repeat: 1,
                     })
                 })
             }
