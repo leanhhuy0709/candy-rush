@@ -69,7 +69,7 @@ export default class ScoreBoard {
                 stroke: '#000000',
                 strokeThickness: 2,
             })
-            .setDepth(3)
+            .setDepth(4)
             .setOrigin(0.5, 0.5)
 
         for (let i = 1; i < 1000; i++) {
@@ -92,7 +92,7 @@ export default class ScoreBoard {
                 blendMode: 'ADD',
             }
         )
-            .setDepth(6)
+            .setDepth(7)
             .start()
 
         this.progressBar = this.scene.add.rectangle(
@@ -101,7 +101,7 @@ export default class ScoreBoard {
             progressBarWidth,
             progressBarHeight,
             0xf5d1b6
-        ).setOrigin(0, 0).setDepth(2)
+        ).setOrigin(0, 0).setDepth(3)
 
         this.updateProgressBar(0)
 
@@ -135,7 +135,7 @@ export default class ScoreBoard {
                 quantity: 1,
                 particleClass: ConfettiParticle,
             })
-            .setDepth(4)
+            .setDepth(5)
             .stop()
     }
 
@@ -194,7 +194,7 @@ export default class ScoreBoard {
             quantity: 1,
             scale: { start: 0.3, end: 0.1 },
         })
-            .setDepth(6)
+            .setDepth(7)
             .start()
 
         let percent =

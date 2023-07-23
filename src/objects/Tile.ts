@@ -234,7 +234,7 @@ export class Tile extends Phaser.GameObjects.Image {
                 gravityY: 150,
                 blendMode: 'ADD',
                 emitting: false,
-            }).setDepth(6)
+            }).setDepth(7)
             emitter.explode(16)
 
             setTimeout(() => {
@@ -249,7 +249,7 @@ export class Tile extends Phaser.GameObjects.Image {
                 gravityY: 150,
                 blendMode: 'ADD',
                 emitting: false,
-            }).setDepth(6)
+            }).setDepth(7)
             emitter.explode(16)
 
             setTimeout(() => {
@@ -269,7 +269,7 @@ export class Tile extends Phaser.GameObjects.Image {
             gravityY: 150,
             blendMode: 'ADD',
             emitting: false,
-        }).setDepth(6)
+        }).setDepth(7)
         emitter.explode(50)
 
         setTimeout(() => {
@@ -301,7 +301,7 @@ export class Tile extends Phaser.GameObjects.Image {
                     blendMode: 'ADD',
                 }
             )
-                .setDepth(5)
+                .setDepth(6)
                 .start()
         }
     }
@@ -329,7 +329,7 @@ export class Tile extends Phaser.GameObjects.Image {
                     blendMode: 'ADD',
                 }
             )
-                .setDepth(5)
+                .setDepth(6)
                 .start()
         }
     }

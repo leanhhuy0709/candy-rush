@@ -31,46 +31,48 @@ export class GamePlayScene extends Phaser.Scene {
     public boardState: BOARD_STATE
     public scoreBoard: ScoreBoard
 
-
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     stats: any
 
     addStats() {
-		this.stats = document.createElement("span")
-		this.stats.style.position = "fixed"
-		this.stats.style.left = "0"
-		this.stats.style.bottom = "0"
-		this.stats.style.backgroundColor = "black"
-		this.stats.style.minWidth = "200px"
-		this.stats.style.padding = "15px"
+        this.stats = document.createElement('span')
+        this.stats.style.position = 'fixed'
+        this.stats.style.left = '0'
+        this.stats.style.bottom = '0'
+        this.stats.style.backgroundColor = 'black'
+        this.stats.style.minWidth = '200px'
+        this.stats.style.padding = '15px'
 
-		this.stats.style.color = "white"
-		this.stats.style.fontFamily = "Courier New"
-		this.stats.style.textAlign = "center"
-		this.stats.innerText = "Draw calls: ?"
+        this.stats.style.color = 'white'
+        this.stats.style.fontFamily = 'Courier New'
+        this.stats.style.textAlign = 'center'
+        this.stats.innerText = 'Draw calls: ?'
 
-		document.body.append(this.stats)
-	}
+        document.body.append(this.stats)
+    }
 
     countDrawCalls() {
-		const renderer = this.game.renderer
-		if (renderer instanceof Phaser.Renderer.WebGL.WebGLRenderer) {
-			let drawCalls = 0
+        const renderer = this.game.renderer
+        if (renderer instanceof Phaser.Renderer.WebGL.WebGLRenderer) {
+            let drawCalls = 0
 
-			const pipelines = renderer.pipelines.pipelines.values()
+            const pipelines = renderer.pipelines.pipelines.values()
 
-			renderer.on(Phaser.Renderer.Events.PRE_RENDER, () => (drawCalls = 0))
-			pipelines.forEach((p) => p.on(Phaser.Renderer.WebGL.Pipelines.Events.AFTER_FLUSH, () => drawCalls++))
-			renderer.on(Phaser.Renderer.Events.POST_RENDER, () => this.redrawStats(drawCalls))
-		} else {
-			renderer.on(Phaser.Renderer.Events.POST_RENDER, () => this.redrawStats(renderer.drawCount))
-		}
-	}
+            renderer.on(Phaser.Renderer.Events.PRE_RENDER, () => (drawCalls = 0))
+            pipelines.forEach((p) =>
+                p.on(Phaser.Renderer.WebGL.Pipelines.Events.AFTER_FLUSH, () => drawCalls++)
+            )
+            renderer.on(Phaser.Renderer.Events.POST_RENDER, () => this.redrawStats(drawCalls))
+        } else {
+            renderer.on(Phaser.Renderer.Events.POST_RENDER, () =>
+                this.redrawStats(renderer.drawCount)
+            )
+        }
+    }
 
-	redrawStats(drawCalls = 0) {
-		this.stats.innerText = `Draw calls: ${drawCalls}`
-	}
-
+    redrawStats(drawCalls = 0) {
+        this.stats.innerText = `Draw calls: ${drawCalls}`
+    }
 
     public debugConsole(): void {
         if (!IS_DEBUG) return
@@ -78,8 +80,6 @@ export class GamePlayScene extends Phaser.Scene {
         //console.log(this.children.list)
         this.countDrawCalls()
     }
-
-
 
     public constructor() {
         super({
@@ -429,7 +429,6 @@ export class GamePlayScene extends Phaser.Scene {
             return
         }*/
 
-        
         if (listTile.length == 0) {
             this.shuffle()
             return
@@ -459,6 +458,8 @@ export class GamePlayScene extends Phaser.Scene {
     }
 
     public shuffle(): void {
+        this.shuffle3D()
+        /*
         this.boardState = BOARD_STATE.HANDLING
 
         const shape = this.getRandomShape()
@@ -505,7 +506,7 @@ export class GamePlayScene extends Phaser.Scene {
                     })
                 })
             }
-        }
+        }*/
     }
 
     private getRandomShape():
@@ -554,5 +555,190 @@ export class GamePlayScene extends Phaser.Scene {
         else if (shape instanceof Phaser.Geom.Ellipse)
             return Phaser.Geom.Ellipse.GetPoint(shape, value)
         return Phaser.Geom.Triangle.GetPoint(shape, value)
+    }
+
+    public shuffle3D(): void {
+        this.boardState = BOARD_STATE.HANDLING
+
+        const centerX = this.cameras.main.width / 2
+        const centerY = this.cameras.main.height / 2
+
+        const width = 400
+        const height = 400
+        let step = -0.1
+        let check = true
+
+        const shape = new Phaser.Geom.Ellipse(centerX, centerY, width, height)
+        console.log(this.getPointFromShape(shape, 0))
+        console.log(this.getPointFromShape(shape, 0.25))
+        console.log(this.getPointFromShape(shape, 0.5))
+        console.log(this.getPointFromShape(shape, 0.75))
+        console.log(this.getPointFromShape(shape, 1))
+
+        this.tileManager.shuffleCandyList()
+
+        for (let i = 0; i < CONST.gridHeight; i++) {
+            for (let j = 0; j < CONST.gridWidth; j++) {
+                const tile = this.tileManager.getTile(i, j) as Tile
+                tile.setTexture('candy', this.tileManager.getRandomFrame(tile.gridX, tile.gridY))
+
+                const temp = {
+                    value: (i * CONST.gridHeight + j) / (CONST.gridHeight * CONST.gridWidth),
+                    test: 5000,
+                }
+
+                const point = this.getPointFromShape(shape, temp.value)
+
+                tile.goToPosition(point.x, point.y, () => {
+                    const tween = this.tweens.add({
+                        targets: temp,
+                        test: 0,
+                        //value:
+                            //(i * CONST.gridHeight + j) / (CONST.gridHeight * CONST.gridWidth) + 1,
+                        duration: 1500,
+                        ease: 'Linear',
+                        onComplete: () => {
+                            this.tileManager.getTile(i, j)?.updatePositon(
+                                true,
+                                () => {
+                                    this.tileManager.shuffleCandyList()
+                                    this.boardState = BOARD_STATE.IDLE
+                                    this.handleMatch()
+                                },
+                                Phaser.Math.Between(0, 500)
+                            )
+                            tween.destroy()
+                        },
+                        onUpdate: () => {
+                            shape.width += step
+
+                            let val = temp.value
+                            if (val > 1) val -= 1
+
+                            let tmp = 0
+                            if (check) {
+                                if (0 <= val && val < 0.25) tmp = 1 - val
+                                else if (0.25 <= val && val < 0.5) tmp = val
+                                else if (0.5 <= val && val < 0.75) tmp = val
+                                else if (0.75 <= val && val <= 1) tmp = val
+                                tile.setFlipX(true)
+                            }
+                            else {
+                                if (0 <= val && val < 0.25) tmp = val
+                                else if (0.25 <= val && val < 0.5) tmp = 1 - val
+                                else if (0.5 <= val && val < 0.75) tmp = 1 - val
+                                else if (0.75 <= val && val <= 1) tmp = 1 - val
+                                tile.setFlipX(false)
+                            }
+                            let val2 = (1 - Math.abs(shape.width)/width) * 1.5
+                            if (val2 >= 1) val2 = 1
+                            else if (val2 <= 0.1) val2 = 0.1
+                            tile.scaleX = val2
+
+                            tile.setDepth(1 + tmp)
+
+                            if (shape.width <= -width) {
+                                step = 0.1
+                                check = !check
+                            }
+                            if (shape.width >= width) {
+                                step = -0.1
+                                check = !check
+                            }
+
+                            const point = this.getPointFromShape(shape, val)
+                            tile.x = point.x
+                            tile.y = point.y
+                            tile.updateSuperEmitterPosition()
+                        },
+                        repeat: 3,
+                    })
+                })
+            }
+        }
+    }
+
+    public shuffle3D_2(): void {
+        this.boardState = BOARD_STATE.HANDLING
+
+        const centerX = this.cameras.main.width / 2
+        const centerY = this.cameras.main.height / 2
+
+        const width = 400
+        const height = 400
+        let step = -0.1
+
+        const shape = new Phaser.Geom.Ellipse(centerX, centerY, width, height)
+        console.log(this.getPointFromShape(shape, 0))
+        console.log(this.getPointFromShape(shape, 0.25))
+        console.log(this.getPointFromShape(shape, 0.5))
+        console.log(this.getPointFromShape(shape, 0.75))
+        console.log(this.getPointFromShape(shape, 1))
+
+        this.tileManager.shuffleCandyList()
+
+        for (let i = 0; i < CONST.gridHeight; i++) {
+            for (let j = 0; j < CONST.gridWidth; j++) {
+                const tile = this.tileManager.getTile(i, j) as Tile
+                tile.setTexture('candy', this.tileManager.getRandomFrame(tile.gridX, tile.gridY))
+
+                const temp = {
+                    value: (i * CONST.gridHeight + j) / (CONST.gridHeight * CONST.gridWidth),
+                    test: 5000,
+                }
+
+                const point = this.getPointFromShape(shape, temp.value)
+
+                tile.goToPosition(point.x, point.y, () => {
+                    const tween = this.tweens.add({
+                        targets: temp,
+                        test: 0,
+                        //value:
+                            //(i * CONST.gridHeight + j) / (CONST.gridHeight * CONST.gridWidth) + 1,
+                        duration: 5000,
+                        ease: 'Linear',
+                        onComplete: () => {
+                            this.tileManager.getTile(i, j)?.updatePositon(
+                                true,
+                                () => {
+                                    this.tileManager.shuffleCandyList()
+                                    this.boardState = BOARD_STATE.IDLE
+                                    this.handleMatch()
+                                },
+                                Phaser.Math.Between(0, 500)
+                            )
+                            tween.destroy()
+                        },
+                        onUpdate: () => {
+                            shape.width += step
+
+                            let val = temp.value
+                            if (val > 1) val -= 1
+
+                            let tmp = 0
+                            if (0 <= val && val < 0.25) tmp = 1 - val
+                            else if (0.25 <= val && val < 0.5) tmp = val
+                            else if (0.5 <= val && val < 0.75) tmp = val
+                            else if (0.75 <= val && val <= 1) tmp = val
+
+                            tile.setDepth(1 + tmp)
+
+                            if (shape.width <= -width) {
+                                step = 0.1
+                            }
+                            if (shape.width >= width) {
+                                step = -0.1
+                            }
+
+                            const point = this.getPointFromShape(shape, val)
+                            tile.x = point.x
+                            tile.y = point.y
+                            tile.updateSuperEmitterPosition()
+                        },
+                        repeat: -1,
+                    })
+                })
+            }
+        }
     }
 }
