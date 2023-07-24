@@ -458,6 +458,7 @@ export class GamePlayScene extends Phaser.Scene {
     }
 
     public shuffle(): void {
+        //console.log(this.game.loop.actualFps)
         const randomValue = Math.random()
         if (randomValue <= 0.33) this.shuffle3D_2()
         else if (randomValue <= 0.66) this.shuffle3D_3()
@@ -594,6 +595,7 @@ export class GamePlayScene extends Phaser.Scene {
                         duration: 3000,
                         ease: 'Linear',
                         onComplete: () => {
+                            tile.setFlipX(false)
                             this.tileManager.getTile(i, j)?.updatePositon(
                                 true,
                                 () => {
