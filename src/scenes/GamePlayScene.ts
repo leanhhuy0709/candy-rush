@@ -14,8 +14,8 @@ export enum BOARD_STATE {
 }
 
 const IS_DEBUG = false
-const IS_AUTO_PLAY = false
-const IDLE_TIME = 5000
+const IS_AUTO_PLAY = true
+const IDLE_TIME = 1000
 
 export class GamePlayScene extends Phaser.Scene {
     private firstSelectedTile: Tile | null
@@ -596,6 +596,7 @@ export class GamePlayScene extends Phaser.Scene {
                         ease: 'Linear',
                         onComplete: () => {
                             tile.setFlipX(false)
+                            tile.scaleX = 1
                             this.tileManager.getTile(i, j)?.updatePositon(
                                 true,
                                 () => {
