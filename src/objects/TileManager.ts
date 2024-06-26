@@ -7,7 +7,7 @@ const SIMILAR_CANDY_CHANCE = 0.333
 
 const GRID_HEIGHT_RELATIVE_TOP = 3
 
-const NUM_CANDY = 5
+const NUM_CANDY = 7
 
 export default class TileManager {
     private scene: GamePlayScene
@@ -635,7 +635,7 @@ export default class TileManager {
 
         let count = 0
 
-        console.log(queue.map(x => [x.gridX, x.gridY]))
+        console.log(queue.map((x) => [x.gridX, x.gridY]))
 
         while (queue.length > 0) {
             const tile = queue.pop() as Tile

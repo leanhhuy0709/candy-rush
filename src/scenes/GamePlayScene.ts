@@ -14,8 +14,8 @@ export enum BOARD_STATE {
 }
 
 const IS_DEBUG = false
-const IS_AUTO_PLAY = true
-const IDLE_TIME = 1000
+const IS_AUTO_PLAY = false
+const IDLE_TIME = 10000
 
 export class GamePlayScene extends Phaser.Scene {
     private firstSelectedTile: Tile | null
